@@ -57,8 +57,7 @@ class FileAccess(multiprocessing.Process):
                 # look up the appropriate result_queue for this data processor
                 # instance
                 result_queue = self.result_queues[proc_num]
-                print('processor {} reading from row {}'.format(proc_num,
-                                                                  row_num))
+                print(f'processor {proc_num} reading from row {row_num}')
                 result_queue.put(self.read_data(row_num))
                 another_loop = True
             except queue.Empty:
@@ -128,7 +127,7 @@ def make_queues(num_processors):
     read_queue = multiprocessing.Queue()
     write_queue = multiprocessing.Queue()
     shutdown_recv, shutdown_send = multiprocessing.Pipe(False)
-    result_queues = [multiprocessing.Queue() for i in range(num_processors)]
+    result_queues = [multiprocessing.Queue() for _ in range(num_processors)]
     file_access = FileAccess(file_path, read_queue, result_queues, write_queue,
                              shutdown_recv)
     file_access.start()

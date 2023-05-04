@@ -126,7 +126,6 @@ class CArray(Array):
                  chunkshape=None, byteorder=None,
                  _log=True, track_times=True):
 
-        self.atom = atom
         """An `Atom` instance representing the shape, type of the atomic
         objects to be saved.
         """
@@ -138,6 +137,7 @@ class CArray(Array):
         # Other private attributes
         self._v_version = None
         """The object version of this array."""
+        self.atom = atom
         self._v_new = new = atom is not None
         """Is this the first time the node has been created?"""
         self._v_new_title = title
@@ -169,16 +169,17 @@ class CArray(Array):
 
         if new:
             if not isinstance(atom, Atom):
-                raise ValueError("atom parameter should be an instance of "
-                                 "tables.Atom and you passed a %s." %
-                                 type(atom))
+                raise ValueError(
+                    f"atom parameter should be an instance of tables.Atom and you passed a {type(atom)}."
+                )
             if shape is None:
                 raise ValueError("you must specify a non-empty shape")
             try:
                 shape = tuple(shape)
             except TypeError:
-                raise TypeError("`shape` parameter must be a sequence "
-                                "and you passed a %s" % type(shape))
+                raise TypeError(
+                    f"`shape` parameter must be a sequence and you passed a {type(shape)}"
+                )
             self.shape = tuple(SizeType(s) for s in shape)
 
             if chunkshape is not None:
@@ -186,8 +187,8 @@ class CArray(Array):
                     chunkshape = tuple(chunkshape)
                 except TypeError:
                     raise TypeError(
-                        "`chunkshape` parameter must be a sequence "
-                        "and you passed a %s" % type(chunkshape))
+                        f"`chunkshape` parameter must be a sequence and you passed a {type(chunkshape)}"
+                    )
                 if len(shape) != len(chunkshape):
                     raise ValueError(f"the shape ({shape}) and chunkshape "
                                      f"({chunkshape}) ranks must be equal.")
@@ -259,14 +260,12 @@ class CArray(Array):
         for start2 in range(start, stop, step * nrowsinbuf):
             # Save the records on disk
             stop2 = start2 + step * nrowsinbuf
-            if stop2 > stop:
-                stop2 = stop
+            stop2 = min(stop2, stop)
             # Set the proper slice in the main dimension
             slices[maindim] = slice(start2, stop2, step)
             start3 = (start2 - start) // step
             stop3 = start3 + nrowsinbuf
-            if stop3 > shape[maindim]:
-                stop3 = shape[maindim]
+            stop3 = min(stop3, shape[maindim])
             # The next line should be generalised if, in the future,
             # maindim is designed to be different from 0 in CArrays.
             # See ticket #199.

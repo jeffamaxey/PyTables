@@ -7,7 +7,4 @@ b = a * 3  # Another 100 MB
 del a
 del b
 
-# Do a loop to fully recharge the python interpreter
-j = 2
-for i in range(1000 * 1000):
-    j += i * 2
+j = 2 + sum(i * 2 for i in range(1000 * 1000))

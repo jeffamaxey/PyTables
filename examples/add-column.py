@@ -49,7 +49,7 @@ table2 = fileh.create_table(group, 'table2', descr2, "A table",
 table.attrs._f_copy(table2)
 
 # Fill the rows of new table with default values
-for i in range(table.nrows):
+for _ in range(table.nrows):
     table2.row.append()
 # Flush the rows to disk
 table2.flush()

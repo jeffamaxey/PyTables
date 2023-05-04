@@ -1,5 +1,6 @@
 """Beware! you need PyTables >= 2.3 to run this script!"""
 
+
 from time import perf_counter as clock
 import numpy as np
 import tables as tb
@@ -7,9 +8,6 @@ import tables as tb
 # NEVENTS = 10000
 NEVENTS = 20_000
 MAX_PARTICLES_PER_EVENT = 100
-
-# Particle description
-
 
 class Particle(tb.IsDescription):
     # event_id = tables.Int32Col(pos=1, indexed=True) # event id (indexed)
@@ -63,19 +61,14 @@ fileh = tb.open_file("particles-pro.h5", mode="r")
 table = fileh.root.events.table
 
 print("Particles in event 34:", end=' ')
-nrows = 0
 t1 = clock()
-for row in table.where("event_id == 34"):
-        nrows += 1
+nrows = sum(1 for _ in table.where("event_id == 34"))
 print(nrows)
 print(f"Done --- Time: {clock() - t1:.3f} sec")
 
 print("Root particles in event 34:", end=' ')
-nrows = 0
 t1 = clock()
-for row in table.where("event_id == 34"):
-    if row['parent_id'] < 0:
-        nrows += 1
+nrows = sum(1 for row in table.where("event_id == 34") if row['parent_id'] < 0)
 print(nrows)
 print(f"Done --- Time: {clock() - t1:.3f} sec")
 

@@ -148,18 +148,17 @@ class EArray(CArray):
 
         # Pre-conditions and extdim computation
         zerodims = np.sum(np.array(self.shape) == 0)
-        if zerodims > 0:
-            if zerodims == 1:
-                self.extdim = list(self.shape).index(0)
-            else:
-                raise NotImplementedError(
-                    "Multiple enlargeable (0-)dimensions are not "
-                    "supported.")
-        else:
+        if zerodims <= 0:
             raise ValueError(
                 "When creating EArrays, you need to set one of "
                 "the dimensions of the Atom instance to zero.")
 
+        if zerodims == 1:
+            self.extdim = list(self.shape).index(0)
+        else:
+            raise NotImplementedError(
+                "Multiple enlargeable (0-)dimensions are not "
+                "supported.")
         # Finish the common part of the creation process
         return self._g_create_common(self._v_expectedrows)
 
@@ -229,8 +228,7 @@ class EArray(CArray):
         for start2 in range(start, stop, step * nrowsinbuf):
             # Save the records on disk
             stop2 = start2 + step * nrowsinbuf
-            if stop2 > stop:
-                stop2 = stop
+            stop2 = min(stop2, stop)
             # Set the proper slice in the extensible dimension
             slices[maindim] = slice(start2, stop2, step)
             object._append(self.__getitem__(tuple(slices)))

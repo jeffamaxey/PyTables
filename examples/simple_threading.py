@@ -80,7 +80,7 @@ def main():
     try:
         mean_ = 0
 
-        for _ in range(len(threads)):
+        for _ in threads:
             out = outqueue.get()
             if isinstance(out, Exception):
                 raise out

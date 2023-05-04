@@ -50,9 +50,10 @@ class DB:
         self.nrows = get_nrows(nrows)
 
     def get_db_size(self):
-        sout = subprocess.Popen("sync;du -s %s" % self.filename, shell=True,
-                                stdout=subprocess.PIPE).stdout
-        line = [l for l in sout][0]
+        sout = subprocess.Popen(
+            f"sync;du -s {self.filename}", shell=True, stdout=subprocess.PIPE
+        ).stdout
+        line = list(sout)[0]
         return int(line.split()[0])
 
     def print_mtime(self, t1, explain):
@@ -78,10 +79,7 @@ class DB:
         return nmean, nstd
 
     def print_qtime_idx(self, colname, ltimes, repeated, verbose):
-        if repeated:
-            r = "[REP] "
-        else:
-            r = "[NOREP] "
+        r = "[REP] " if repeated else "[NOREP] "
         ltimes = np.array(ltimes)
         ntimes = len(ltimes)
         qtime1 = ltimes[0]  # First measured time
@@ -129,33 +127,30 @@ class DB:
         self.close_db(self.con)
 
     def index_db(self, dtype, kind, optlevel, verbose):
-        if dtype == "int":
-            idx_cols = ['col2']
-        elif dtype == "float":
+        if dtype == "float":
             idx_cols = ['col4']
+        elif dtype == "int":
+            idx_cols = ['col2']
         else:
             idx_cols = ['col2', 'col4']
         for colname in idx_cols:
             t1 = clock()
             self.index_col(self.con, colname, kind, optlevel, verbose)
-            self.print_mtime(t1, 'Index time (%s)' % colname)
+            self.print_mtime(t1, f'Index time ({colname})')
 
     def query_db(self, niter, dtype, onlyidxquery, onlynonidxquery,
                  avoidfscache, verbose, inkernel):
         self.con = self.open_db()
-        if dtype == "int":
-            reg_cols = ['col1']
-            idx_cols = ['col2']
-        elif dtype == "float":
+        if dtype == "float":
             reg_cols = ['col3']
             idx_cols = ['col4']
+        elif dtype == "int":
+            reg_cols = ['col1']
+            idx_cols = ['col2']
         else:
             reg_cols = ['col1', 'col3']
             idx_cols = ['col2', 'col4']
-        if avoidfscache:
-            rseed = int(np.random.randint(self.nrows))
-        else:
-            rseed = 19
+        rseed = int(np.random.randint(self.nrows)) if avoidfscache else 19
         # Query for non-indexed columns
         np.random.seed(rseed)
         base = np.random.randint(self.nrows)
@@ -163,7 +158,7 @@ class DB:
             for colname in reg_cols:
                 ltimes = []
                 random.seed(rseed)
-                for i in range(NI_NTIMES):
+                for _ in range(NI_NTIMES):
                     t1 = clock()
                     results = self.do_query(self.con, colname, base, inkernel)
                     ltimes.append(clock() - t1)
@@ -389,11 +384,11 @@ if __name__ == "__main__":
 
     if docreate:
         if verbose:
-            print("writing %s rows" % krows)
+            print(f"writing {krows} rows")
         db.create_db(dtype, kind, optlevel, verbose)
 
     if doquery:
-        print("Calling query_db() %s times" % niter)
+        print(f"Calling query_db() {niter} times")
         if doprofile:
             import pstats
             import cProfile as prof
@@ -418,18 +413,6 @@ if __name__ == "__main__":
             kcg = lsprofcalltree.KCacheGrind(prof)
             with Path('indexed_search.kcg').open('w') as ofile:
                 kcg.output(ofile)
-        elif doprofile:
-            import hotshot
-            import hotshot.stats
-            prof = hotshot.Profile("indexed_search.prof")
-            benchtime, stones = prof.run(
-                'db.query_db(niter, dtype, onlyidxquery, onlynonidxquery, '
-                'avoidfscache, verbose, inkernel)')
-            prof.close()
-            stats = hotshot.stats.load("indexed_search.prof")
-            stats.strip_dirs()
-            stats.sort_stats('time', 'calls')
-            stats.print_stats(20)
         else:
             db.query_db(niter, dtype, onlyidxquery, onlynonidxquery,
                         avoidfscache, verbose, inkernel)

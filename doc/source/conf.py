@@ -159,8 +159,13 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('usersguide/usersguide', 'usersguide-%s.tex' % version,
-   'PyTables User Guide', 'PyTables maintainers', 'manual'),
+    (
+        'usersguide/usersguide',
+        f'usersguide-{version}.tex',
+        'PyTables User Guide',
+        'PyTables maintainers',
+        'manual',
+    )
 ]
 
 # The name of an image file (relative to this directory) to place at the top of

@@ -58,17 +58,17 @@ def createFile(filename, totalrows, filters, recsize):
     for j in range(3):
         # Create a table
         if recsize == "big":
-            table = fileh.create_table(group, 'tuple' + str(j), Big, title,
-                                       None,
-                                       totalrows)
+            table = fileh.create_table(
+                group, f'tuple{str(j)}', Big, title, None, totalrows
+            )
         elif recsize == "medium":
-            table = fileh.create_table(group, 'tuple' + str(j), Medium, title,
-                                       None,
-                                       totalrows)
+            table = fileh.create_table(
+                group, f'tuple{str(j)}', Medium, title, None, totalrows
+            )
         elif recsize == "small":
-            table = fileh.create_table(group, 'tuple' + str(j), Small, title,
-                                       None,
-                                       totalrows)
+            table = fileh.create_table(
+                group, f'tuple{str(j)}', Small, title, None, totalrows
+            )
         else:
             raise RuntimeError("This should never happen")
 
@@ -119,15 +119,12 @@ def createFile(filename, totalrows, filters, recsize):
                 d.append()  # This is a 10% faster than table.append()
         rowswritten += totalrows
 
-        if recsize == "small":
-            # Testing with indexing
-            pass
 #            table._createIndex("var3", Filters(1,"zlib",shuffle=1))
 
         # table.flush()
         group._v_attrs.test2 = "just a test"
         # Create a new group
-        group2 = fileh.create_group(group, 'group' + str(j))
+        group2 = fileh.create_group(group, f'group{str(j)}')
         # Iterate over this new group (group2)
         group = group2
         table.flush()
@@ -143,9 +140,7 @@ def readFile(filename, recsize, verbose):
     fileh = tb.open_file(filename, mode="r")
     rowsread = 0
     for groupobj in fileh.walk_groups(fileh.root):
-        # print "Group pathname:", groupobj._v_pathname
-        row = 0
-        for table in fileh.list_nodes(groupobj, 'Table'):
+        for row, table in enumerate(fileh.list_nodes(groupobj, 'Table')):
             rowsize = table.rowsize
             print("reading", table)
             if verbose:
@@ -154,80 +149,22 @@ def readFile(filename, recsize, verbose):
                 print("Buffersize:", table.rowsize * table.nrowsinbuf)
                 print("MaxTuples:", table.nrowsinbuf)
 
-            if recsize == "big" or recsize == "medium":
-                # e = [ p.float1 for p in table.iterrows()
-                #      if p.grid_i < 2 ]
-                #e = [ str(p) for p in table.iterrows() ]
-                #      if p.grid_i < 2 ]
-#                 e = [ p['grid_i'] for p in table.iterrows()
-#                       if p['grid_j'] == 20 and p['grid_i'] < 20 ]
-#                 e = [ p['grid_i'] for p in table
-#                       if p['grid_i'] <= 2 ]
-#                e = [ p['grid_i'] for p in table.where("grid_i<=20")]
-#                 e = [ p['grid_i'] for p in
-#                       table.where('grid_i <= 20')]
-                e = [p['grid_i'] for p in
-                     table.where('(grid_i <= 20) & (grid_j == 20)')]
-#                 e = [ p['grid_i'] for p in table.iterrows()
-#                       if p.nrow() == 20 ]
-#                 e = [ table.delrow(p.nrow()) for p in table.iterrows()
-#                       if p.nrow() == 20 ]
-                # The version with a for loop is only 1% better than
-                # comprenhension list
-                #e = []
-                # for p in table.iterrows():
-                #    if p.grid_i < 20:
-                #        e.append(p.grid_j)
-            else:  # small record case
-#                 e = [ p['var3'] for p in table.iterrows()
-#                       if p['var2'] < 20 and p['var3'] < 20 ]
-#                e = [ p['var3'] for p in table.where("var3 <= 20")
-#                      if p['var2'] < 20 ]
-#               e = [ p['var3'] for p in table.where("var3 <= 20")]
-# Cuts 1) and 2) issues the same results but 2) is about 10 times faster
-# Cut 1)
-#                e = [ p.nrow() for p in
-#                      table.where(table.cols.var2 > 5)
-#                      if p["var2"] < 10]
-# Cut 2)
-#                 e = [ p.nrow() for p in
-#                       table.where(table.cols.var2 < 10)
-#                       if p["var2"] > 5]
-#                e = [ (p._nrow,p["var3"]) for p in
-#                e = [ p["var3"] for p in
-#                      table.where(table.cols.var3 < 10)]
-#                      table.where(table.cols.var3 < 10)]
-#                      table if p["var3"] <= 10]
-#               e = [ p['var3'] for p in table.where("var3 <= 20")]
-#                e = [ p['var3'] for p in
-# table.where(table.cols.var1 == "10")]  # More
-                     # than ten times faster than the next one
-#                e = [ p['var3'] for p in table
-#                      if p['var1'] == "10"]
-#                e = [ p['var3'] for p in table.where('var2 <= 20')]
-                e = [p['var3']
-                     for p in table.where('(var2 <= 20) & (var2 >= 3)')]
-                # e = [ p[0] for p in table.where('var2 <= 20')]
-                #e = [ p['var3'] for p in table if p['var2'] <= 20 ]
-                # e = [ p[:] for p in table if p[1] <= 20 ]
-#                  e = [ p['var3'] for p in table._whereInRange(table.cols.var2 <=20)]
-                #e = [ p['var3'] for p in table.iterrows(0,21) ]
-#                  e = [ p['var3'] for p in table.iterrows()
-#                       if p.nrow() <= 20 ]
-                #e = [ p['var3'] for p in table.iterrows(1,0,1000)]
-                #e = [ p['var3'] for p in table.iterrows(1,100)]
-                # e = [ p['var3'] for p in table.iterrows(step=2)
-                #      if p.nrow() < 20 ]
-                # e = [ p['var2'] for p in table.iterrows()
-                #      if p['var2'] < 20 ]
-                # for p in table.iterrows():
-                #      pass
+            e = (
+                [
+                    p['grid_i']
+                    for p in table.where('(grid_i <= 20) & (grid_j == 20)')
+                ]
+                if recsize in ["big", "medium"]
+                else [
+                    p['var3']
+                    for p in table.where('(var2 <= 20) & (var2 >= 3)')
+                ]
+            )
             if verbose:
                 # print "Last record read:", p
                 print("resulting selection list ==>", e)
 
             rowsread += table.nrows
-            row += 1
             if verbose:
                 print("Total selected records ==> ", len(e))
 
@@ -404,13 +341,10 @@ if __name__ == "__main__":
         cpu1 = cpuclock()
         if psyco_imported and usepsyco:
             psyco.bind(readFile)
-            # psyco.bind(readField)
-            pass
         if rng or fieldName:
             (rowsr, rowsz) = readField(file, fieldName, rng, verbose)
-            pass
         else:
-            for i in range(1):
+            for _ in range(1):
                 (rowsr, rowsz) = readFile(file, recsize, verbose)
         t2 = clock()
         cpu2 = cpuclock()

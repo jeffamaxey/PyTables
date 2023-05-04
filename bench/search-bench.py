@@ -28,6 +28,7 @@ Small = {
 
 def createNewBenchFile(bfile, verbose):
 
+
     class Create(tb.IsDescription):
         nrows = tb.Int32Col(pos=0)
         irows = tb.Int32Col(pos=1)
@@ -58,7 +59,7 @@ def createNewBenchFile(bfile, verbose):
     bf = tb.open_file(bfile, "w")
     # Create groups
     for recsize in ["small"]:
-        group = bf.create_group("/", recsize, recsize + " Group")
+        group = bf.create_group("/", recsize, f"{recsize} Group")
         # Attach the row size of table as attribute
         if recsize == "small":
             group._v_attrs.rowsize = 16
@@ -67,14 +68,14 @@ def createNewBenchFile(bfile, verbose):
         bf.create_table(group, "create_worst", Create, "worst case")
         for case in ["best", "worst"]:
             # create a group for searching bench (best case)
-            groupS = bf.create_group(group, "search_" + case, "Search Group")
+            groupS = bf.create_group(group, f"search_{case}", "Search Group")
             # Create Tables for searching
             for mode in ["indexed", "inkernel", "standard"]:
-                groupM = bf.create_group(groupS, mode, mode + " Group")
+                groupM = bf.create_group(groupS, mode, f"{mode} Group")
                 # for searching bench
                 # for atom in ["string", "int", "float", "bool"]:
                 for atom in ["string", "int", "float"]:
-                    bf.create_table(groupM, atom, Search, atom + " bench")
+                    bf.create_table(groupM, atom, Search, f"{atom} bench")
     bf.close()
 
 
@@ -95,10 +96,7 @@ def createFile(filename, nrows, filters, index, heavy, noise, verbose):
     minimum = 0
     maximum = nrows
     for i in range(0, nrows, nrowsbuf):
-        if i + nrowsbuf > nrows:
-            j = nrows
-        else:
-            j = i + nrowsbuf
+        j = min(i + nrowsbuf, nrows)
         if randomvalues:
             var3 = np.random.uniform(minimum, maximum, size=j - i)
         else:
@@ -166,9 +164,9 @@ def benchCreate(file, nrows, filters, index, bfile, heavy,
     bf = tb.open_file(bfile, "a")
     recsize = "small"
     if worst:
-        table = bf.get_node("/" + recsize + "/create_worst")
+        table = bf.get_node(f"/{recsize}/create_worst")
     else:
-        table = bf.get_node("/" + recsize + "/create_best")
+        table = bf.get_node(f"/{recsize}/create_best")
 
     (rowsw, irows, rowsz, time1, time2, tcpu1, tcpu2, size1, size2) = \
         createFile(file, nrows, filters, index, heavy, noise, verbose)
@@ -272,32 +270,21 @@ def readFile(filename, atom, riter, indexmode, dselect, verbose):
                 results = [p.nrow for p in table
                            if float(rnd) <= p["var3"] < float(val)]
         else:
-            raise ValueError("Value for atom '%s' not supported." % atom)
+            raise ValueError(f"Value for atom '{atom}' not supported.")
         rowselected += len(results)
         # print "selected values-->", results
         if i == 0:
             # First iteration
             time1 = clock() - t1
             tcpu1 = cpuclock() - cpu1
-        else:
-            if indexmode == "indexed":
-                # if indexed, wait until the 5th iteration (in order to
-                # insure that the index is effectively cached) to take times
-                if i >= 5:
-                    time2 += clock() - t1
-                    tcpu2 += cpuclock() - cpu1
-            else:
-                time2 += clock() - t1
-                tcpu2 += cpuclock() - cpu1
-
+        elif indexmode == "indexed" and i >= 5 or indexmode != "indexed":
+            time2 += clock() - t1
+            tcpu2 += cpuclock() - cpu1
     if riter > 1:
-        if indexmode == "indexed" and riter >= 5:
-            correction = 5
-        else:
-            correction = 1
+        correction = 5 if indexmode == "indexed" and riter >= 5 else 1
         time2 = time2 / (riter - correction)
         tcpu2 = tcpu2 / (riter - correction)
-    if verbose and 1:
+    if verbose:
         print("Values that fullfill the conditions:")
         print(results)
 
@@ -317,17 +304,12 @@ def benchSearch(file, riter, indexmode, bfile, heavy, psyco, dselect, verbose):
     bf = tb.open_file(bfile, "a")
     recsize = "small"
     if worst:
-        tableparent = "/" + recsize + "/search_worst/" + indexmode + "/"
+        tableparent = f"/{recsize}/search_worst/{indexmode}/"
     else:
-        tableparent = "/" + recsize + "/search_best/" + indexmode + "/"
+        tableparent = f"/{recsize}/search_best/{indexmode}/"
 
     # Do the benchmarks
-    if not heavy:
-        #atomlist = ["string", "int", "float", "bool"]
-        atomlist = ["string", "int", "float"]
-    else:
-        #atomlist = ["int", "float", "bool"]
-        atomlist = ["int", "float"]
+    atomlist = ["int", "float"] if heavy else ["string", "int", "float"]
     for atom in atomlist:
         tablepath = tableparent + atom
         table = bf.get_node(tablepath)
@@ -467,8 +449,8 @@ if __name__ == "__main__":
             indexmode = option[1]
             if indexmode not in supported_imodes:
                 raise ValueError(
-                    "Indexmode should be any of '%s' and you passed '%s'" %
-                    (supported_imodes, indexmode))
+                    f"Indexmode should be any of '{supported_imodes}' and you passed '{indexmode}'"
+                )
         elif option[0] == '-n':
             nrows = int(float(option[1]) * 1000)
         elif option[0] == '-N':

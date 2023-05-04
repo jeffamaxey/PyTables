@@ -3,7 +3,7 @@ from indexed_search import DB
 import psycopg2 as db2
 
 CLUSTER_NAME = "base"
-DATA_DIR = "/scratch2/postgres/data/%s" % CLUSTER_NAME
+DATA_DIR = f"/scratch2/postgres/data/{CLUSTER_NAME}"
 #DATA_DIR = "/var/lib/pgsql/data/%s" % CLUSTER_NAME
 DSN = "dbname=%s port=%s"
 CREATE_DB = "createdb %s"
@@ -26,8 +26,7 @@ class StreamChar:
         for i in range(self.nrows):
             if i >= j * self.step:
                 stop = (j + 1) * self.step
-                if stop > self.nrows:
-                    stop = self.nrows
+                stop = min(stop, self.nrows)
                 arr_i4, arr_f8 = self.db.fill_arrays(i, stop)
                 j += 1
                 k = 0
@@ -40,7 +39,7 @@ class StreamChar:
         for tup in self.values_generator():
             sout += "%s\t%s\t%s\t%s\n" % tup
             if n is not None and len(sout) > n:
-                for i in range(n, len(sout), n):
+                for _ in range(n, len(sout), n):
                     rout = sout[:n]
                     sout = sout[n:]
                     yield rout
@@ -72,10 +71,10 @@ class Postgres_DB(DB):
 
     # Overloads the method in DB class
     def get_db_size(self):
-        sout = subprocess.Popen("sudo du -s %s" % DATA_DIR,
-                                shell=True,
-                                stdout=subprocess.PIPE).stdout
-        line = [l for l in sout][0]
+        sout = subprocess.Popen(
+            f"sudo du -s {DATA_DIR}", shell=True, stdout=subprocess.PIPE
+        ).stdout
+        line = list(sout)[0]
         return int(line.split()[0])
 
     def open_db(self, remove=0):
@@ -108,23 +107,14 @@ class Postgres_DB(DB):
         con.commit()
 
     def index_col(self, con, colname, optlevel, idxtype, verbose):
-        self.cur.execute("create index %s on %s(%s)" %
-                         (colname + '_idx', TABLE_NAME, colname))
+        self.cur.execute(f"create index {colname}_idx on {TABLE_NAME}({colname})")
         con.commit()
 
     def do_query_simple(self, con, column, base):
         self.cur.execute(
-            "select sum(%s) from %s where %s >= %s and %s <= %s" %
-            (column, TABLE_NAME,
-             column, base + self.rng[0],
-             column, base + self.rng[1]))
-#             "select * from %s where %s >= %s and %s <= %s" % \
-#             (TABLE_NAME,
-#              column, base+self.rng[0],
-#              column, base+self.rng[1]))
-        #results = self.flatten(self.cur.fetchall())
-        results = self.cur.fetchall()
-        return results
+            f"select sum({column}) from {TABLE_NAME} where {column} >= {base + self.rng[0]} and {column} <= {base + self.rng[1]}"
+        )
+        return self.cur.fetchall()
 
     def do_query(self, con, column, base, *unused):
         d = (self.rng[1] - self.rng[0]) / 2
@@ -132,17 +122,14 @@ class Postgres_DB(DB):
         sup1 = int(self.rng[0] + d + base)
         inf2 = self.rng[0] + base * 2
         sup2 = self.rng[0] + d + base * 2
-        # print "lims-->", inf1, inf2, sup1, sup2
-        condition = "((%s>=%s) and (%s<%s)) or ((col2>%s) and (col2<%s))"
-        #condition = "((col3>=%s) and (col3<%s)) or ((col1>%s) and (col1<%s))"
-        condition += " and ((col1+3.1*col2+col3*col4) > 3)"
+        condition = (
+            "((%s>=%s) and (%s<%s)) or ((col2>%s) and (col2<%s))"
+            + " and ((col1+3.1*col2+col3*col4) > 3)"
+        )
         #condition += " and (sqrt(col1^2+col2^2+col3^2+col4^2) > .1)"
-        condition = condition % (column, inf2, column, sup2, inf1, sup1)
+        condition %= (column, inf2, column, sup2, inf1, sup1)
         # print "condition-->", condition
-        self.cur.execute(
-            #            "select sum(%s) from %s where %s" %
-            "select %s from %s where %s" %
-            (column, TABLE_NAME, condition))
+        self.cur.execute(f"select {column} from {TABLE_NAME} where {condition}")
         #results = self.flatten(self.cur.fetchall())
         results = self.cur.fetchall()
         #results = self.cur.fetchall()

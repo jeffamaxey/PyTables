@@ -8,6 +8,7 @@ This requires Scientific from
 http://starship.python.net/~hinsen/ScientificPython
 
 """
+
 import sys
 from Scientific.IO import NetCDF
 import tables as tb
@@ -21,13 +22,10 @@ for varname in ncfile.variables.keys():
     vardims = list(var.dimensions)
     vardimsizes = [ncfile.dimensions[vardim] for vardim in vardims]
     # use long_name for title.
-    if hasattr(var, 'long_name'):
-       title = var.long_name
-    else: # or, just use some bogus title.
-       title = varname + ' array'
+    title = var.long_name if hasattr(var, 'long_name') else f'{varname} array'
     # if variable has unlimited dimension or has rank>1,
     # make it enlargeable (with zlib compression).
-    if vardimsizes[0] == None or len(vardimsizes) > 1:
+    if vardimsizes[0] is None or len(vardimsizes) > 1:
         vardimsizes[0] = 0
         vardata = h5file.createEArray(h5file.root, varname,
         tb.Atom(shape=tuple(vardimsizes), dtype=var.typecode(),),
@@ -36,7 +34,6 @@ for varname in ncfile.variables.keys():
     # (so the whole array doesn't have to be kept in memory).
         for n in range(var.shape[0]):
             vardata.append(var[n:n+1])
-    # or else, create regular array write data to it all at once.
     else:
         vardata=h5file.createArray(h5file.root, varname, var[:], title)
     # set variable attributes.

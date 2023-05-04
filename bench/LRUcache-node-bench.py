@@ -39,8 +39,6 @@ def iternodes():
 print("reading nodes...")
 # First iteration (put in LRU cache)
 t1 = clock()
-for a in f.root.NodeContainer:
-    pass
 print(f"time (init cache)--> {clock() - t1:.3f}")
 
 

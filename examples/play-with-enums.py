@@ -17,7 +17,7 @@ colorList = ['red', 'green', 'blue', 'white', 'black']
 colors = tb.Enum(colorList)
 
 COMMENT("Take a look at the name-value pairs.")
-print("Colors:", [v for v in colors])
+print("Colors:", list(colors))
 
 COMMENT("Access values as attributes.")
 print("Value of 'red' and 'white':", (colors.red, colors.white))
@@ -28,7 +28,7 @@ print("Value of 'red' and 'white':", (colors['red'], colors['white']))
 print("Value of 'yellow':", colors['yellow'])
 
 COMMENT("Access names.")
-print("Name of value %s:" % colors.red, colors(colors.red))
+print(f"Name of value {colors.red}:", colors(colors.red))
 print("Name of value 1234:", colors(1234))
 
 

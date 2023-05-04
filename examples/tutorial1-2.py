@@ -5,6 +5,7 @@ that create the tutorial1.h5 file needed here.
 
 """
 
+
 import tables as tb
 
 print()
@@ -118,8 +119,7 @@ print("Table title:", table.title)
 print("Number of rows in table:", table.nrows)
 print("Table variable names with their type and shape:")
 for name in table.colnames:
-    print(name, ':= {}, {}'.format(table.coldtypes[name],
-                               table.coldtypes[name].shape))
+    print(name, f':= {table.coldtypes[name]}, {table.coldtypes[name].shape}')
 print()
 
 # Get the object in "/columns pressure"
@@ -210,21 +210,21 @@ print("After modifying first row of energy-->", table[0])
 
 # Column slices
 table.cols.TDCcount[2:5] = [2, 3, 4]
-print("After modifying slice [2:5] of ADCcount-->", table[0:5])
+print("After modifying slice [2:5] of ADCcount-->", table[:5])
 table.cols.energy[1:9:3] = [2, 3, 4]
-print("After modifying slice [1:9:3] of energy-->", table[0:9])
+print("After modifying slice [1:9:3] of energy-->", table[:9])
 
 # Modifying complete Rows
 table.modify_rows(start=1, step=3,
                   rows=[(1, 2, 3.0, 4, 5, 6, 'Particle:   None', 8.0),
                         (2, 4, 6.0, 8, 10, 12, 'Particle: None*2', 16.0)])
-print("After modifying the complete third row-->", table[0:5])
+print("After modifying the complete third row-->", table[:5])
 
 # Modifying columns inside table iterators
 for row in table.where('TDCcount <= 2'):
     row['energy'] = row['TDCcount'] * 2
     row.update()
-print("After modifying energy column (where TDCcount <=2)-->", table[0:4])
+print("After modifying energy column (where TDCcount <=2)-->", table[:4])
 
 print()
 print('-**-**-**-**- modify elements of an array -**-**-**-**-**-')

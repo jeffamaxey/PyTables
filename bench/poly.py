@@ -1,6 +1,7 @@
 """This script compares the speed of the computation of a polynomial for
 different (numpy.memmap and tables.Expr) out-of-memory paradigms."""
 
+
 from pathlib import Path
 from time import perf_counter as clock
 
@@ -22,7 +23,7 @@ x = None
 
 # Filenames for numpy.memmap
 fprefix = "numpy.memmap"             # the I/O file prefix
-mpfnames = [fprefix + "-x.bin", fprefix + "-r.bin"]
+mpfnames = [f"{fprefix}-x.bin", f"{fprefix}-r.bin"]
 
 # Filename for tables.Expr
 h5fname = "tablesExpr.h5"     # the I/O file

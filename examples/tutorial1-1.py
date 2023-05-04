@@ -5,13 +5,11 @@ with any HDF5 generic utility.
 
 """
 
+
 import numpy as np
 import tables as tb
 
 
-        #'-**-**-**-**-**-**- user record definition  -**-**-**-**-**-**-**-'
-
-# Define a user record to characterize some kind of particles
 class Particle(tb.IsDescription):
     name = tb.StringCol(16)     # 16-character String
     idnumber = tb.Int64Col()    # Signed 64-bit integer
@@ -108,4 +106,4 @@ print(h5file)
 
 # Close the file
 h5file.close()
-print("File '" + filename + "' created")
+print(f"File '{filename}' created")

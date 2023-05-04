@@ -31,7 +31,7 @@ def create_file(array_size):
     array = np.ones(array_size, dtype='i8')
     with tb.open_file('test.h5', 'w') as fobj:
         array = fobj.create_array('/', 'test', array)
-        print('file created, size: {} MB'.format(array.size_on_disk / 1e6))
+        print(f'file created, size: {array.size_on_disk / 1000000.0} MB')
 
 
 # process to receive an array using a multiprocessing.Pipe connection
@@ -69,7 +69,7 @@ def read_and_send_pipe(send_type, array_size):
         # read an array from the PyTables file and send it to the other process
         output = array.read(0, array_size, 1)
         array_send.send(output)
-        assert(np.all(output + 1 == 2))
+        assert np.all(output == 1)
         # receive the timestamps from the other process
         recv_timestamp, finish_timestamp = result_recv.recv()
     print_results(send_type, start_timestamp, recv_timestamp, finish_timestamp)
@@ -197,7 +197,7 @@ def read_and_send_socket(send_type, array_size, array_bytes, address_func,
         # data buffer to the receiving process
         output = array.read(0, array_size, 1)
         sock.send(output.data)
-        assert(np.all(output + 1 == 2))
+        assert np.all(output == 1)
         # receive the timestamps from the other process
         recv_timestamp, finish_timestamp = result_recv.recv()
     sock.close()

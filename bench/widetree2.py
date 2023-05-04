@@ -69,10 +69,9 @@ class WideTreeTestCase(unittest.TestCase):
                               ngroup)
             # Get the group
             group = fileh.root
-            ntable = 0
             if verbose:
                 print("Group ==>", group)
-            for table in fileh.list_nodes(group, 'Table'):
+            for ntable, table in enumerate(fileh.list_nodes(group, 'Table')):
                 if verbose > 1:
                     print("Table ==>", table)
                     print("Max rows in buf:", table.nrowsinbuf)
@@ -94,8 +93,6 @@ class WideTreeTestCase(unittest.TestCase):
 
                 assert nrow == table.nrows
                 rowsread += table.nrows
-                ntable += 1
-
             # Close the file (eventually destroy the extended type)
             fileh.close()
 

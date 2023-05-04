@@ -5,6 +5,7 @@ the raw data file in a subdirectory.
 
 """
 
+
 import errno
 from pathlib import Path
 
@@ -27,8 +28,7 @@ class FooBar(tb.IsDescription):
 try:
     RAW_DIR.mkdir()
 except OSError as e:
-    if e.errno == errno.EEXIST:
-        pass
+    pass
 with tb.open_file(FNAME, mode="w", driver=DRIVER, **DRIVER_PROPS) as f:
     group = f.create_group("/", "foo", "foo desc")
     table = f.create_table(group, "bar", FooBar, "bar desc")

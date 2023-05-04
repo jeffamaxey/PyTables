@@ -74,6 +74,8 @@ class HDF5ExtError(RuntimeError):
 
     @classmethod
     def set_policy_from_env(cls):
+        oldvalue = cls.DEFAULT_H5_BACKTRACE_POLICY
+        envvalue = os.environ.get("PT_DEFAULT_H5_BACKTRACE_POLICY", "DEFAULT")
         envmap = {
             "IGNORE": False,
             "FALSE": False,
@@ -82,15 +84,12 @@ class HDF5ExtError(RuntimeError):
             "VERBOSE": "VERBOSE",
             "DEFAULT": "VERBOSE",
         }
-        oldvalue = cls.DEFAULT_H5_BACKTRACE_POLICY
-        envvalue = os.environ.get("PT_DEFAULT_H5_BACKTRACE_POLICY", "DEFAULT")
         try:
             newvalue = envmap[envvalue.upper()]
         except KeyError:
-            warnings.warn("Invalid value for the environment variable "
-                          "'PT_DEFAULT_H5_BACKTRACE_POLICY'.  The default "
-                          "policy for HDF5 back trace management in PyTables "
-                          "will be: '%s'" % oldvalue)
+            warnings.warn(
+                f"Invalid value for the environment variable 'PT_DEFAULT_H5_BACKTRACE_POLICY'.  The default policy for HDF5 back trace management in PyTables will be: '{oldvalue}'"
+            )
         else:
             cls.DEFAULT_H5_BACKTRACE_POLICY = newvalue
 
@@ -140,7 +139,7 @@ class HDF5ExtError(RuntimeError):
 
         """
 
-        verbose = bool(self._h5bt_policy in ('VERBOSE', 'verbose'))
+        verbose = self._h5bt_policy in ('VERBOSE', 'verbose')
 
         if verbose and self.h5backtrace:
             bt = "\n".join([

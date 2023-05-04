@@ -26,7 +26,7 @@ f = tb.open_file("data.nobackup/collations.h5", "w")
 table = f.create_table("/", "Energies", Energies, expectedrows=N)
 # Fill the table with values
 lbucket = 1000   # Fill in buckets of 1000 rows, for speed
-for i in range(0, N, lbucket):
+for _ in range(0, N, lbucket):
     bucket = fill_bucket(lbucket)
     table.append(bucket)
 # Fill the remaining rows

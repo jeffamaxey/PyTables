@@ -33,19 +33,17 @@ def quantize(data, least_significant_digit):
 
     precision = 10 ** -least_significant_digit
     exp = math.log(precision, 10)
-    if exp < 0:
-        exp = math.floor(exp)
-    else:
-        exp = math.ceil(exp)
+    exp = math.floor(exp) if exp < 0 else math.ceil(exp)
     bits = math.ceil(math.log(10 ** -exp, 2))
     scale = 2 ** bits
     return np.around(scale * data) / scale
 
 
 def get_db_size(filename):
-    sout = subprocess.Popen("ls -sh %s" % filename, shell=True,
-                            stdout=subprocess.PIPE).stdout
-    line = [l for l in sout][0]
+    sout = subprocess.Popen(
+        f"ls -sh {filename}", shell=True, stdout=subprocess.PIPE
+    ).stdout
+    line = list(sout)[0]
     return line.split()[0]
 
 
@@ -60,7 +58,7 @@ def bench(chunkshape, filters):
                         chunkshape = chunkshape)
     # Fill the array
     t1 = clock()
-    for i in range(N):
+    for _ in range(N):
         # e.append([numpy.random.rand(M)])  # use this for less compressibility
         e.append([quantize(np.random.rand(M), 6)])
     # os.system("sync")
@@ -84,15 +82,6 @@ def bench(chunkshape, filters):
     # Read in random mode:
     i_index = np.random.randint(0, N, 128)
     j_index = np.random.randint(0, M, 256)
-    # Flush everything to disk and flush caches
-    #os.system("sync; echo 1 > /proc/sys/vm/drop_caches")
-
-    # Protection against too large chunksizes
-    # 4 MB
-    if 0 and filters.complevel and chunkshape[0] * chunkshape[1] * 8 > 2 ** 22:
-        f.close()
-        return
-
     t1 = clock()
     for i in i_index:
         for j in j_index:
@@ -120,6 +109,6 @@ for complib in (None, 'zlib', 'lzo', 'blosc'):
             chunk1 = chunk2 / M
             chunk2 = M
         chunkshape = (chunk1, chunk2)
-        cs_str = str(chunksize / 1024) + " KB"
+        cs_str = f"{str(chunksize / 1024)} KB"
         print("***** Chunksize:", cs_str, "/ Chunkshape:", chunkshape, "*****")
         bench(chunkshape, filters)

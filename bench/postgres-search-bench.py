@@ -30,8 +30,7 @@ def int_generator(nrows):
     for i in range(nrows):
         if i >= step * j:
             stop = (j + 1) * step
-            if stop > nrows:  # Seems unnecessary
-                stop = nrows
+            stop = min(stop, nrows)
             col_i, col_j = fill_arrays(i, stop)
             j += 1
             k = 0
@@ -71,7 +70,7 @@ class Stream32:
         for tup in int_generator(nrows):
             sout += "%s\t%s\n" % tup
             if n is not None and len(sout) > n:
-                for i in range(n, len(sout), n):
+                for _ in range(n, len(sout), n):
                     rout = sout[:n]
                     sout = sout[n:]
                     yield rout
@@ -87,10 +86,7 @@ class Stream32:
 
 
 def open_db(filename, remove=0):
-    if not filename:
-        con = sqlite.connect(DSN)
-    else:
-        con = sqlite.connect(filename)
+    con = sqlite.connect(filename) if filename else sqlite.connect(DSN)
     cur = con.cursor()
     return con, cur
 
@@ -140,10 +136,9 @@ def query_db(filename, rng):
     for i in range(ntimes):
         # between clause does not seem to take advantage of indexes
         # cur.execute("select j from ints where j between %s and %s" % \
-        cur.execute("select i from ints where j >= %s and j <= %s" %
-                    # cur.execute("select i from ints where i >= %s and i <=
-                    # %s" %
-                    (rng[0] + i, rng[1] + i))
+        cur.execute(
+            f"select i from ints where j >= {rng[0] + i} and j <= {rng[1] + i}"
+        )
         results = cur.fetchall()
     con.commit()
     qtime = (clock() - t1) / ntimes
@@ -227,14 +222,12 @@ if __name__ == "__main__":
 #         from pysqlite2 import dbapi2 as sqlite
     import psycopg2 as sqlite
 
-    if verbose:
-        # print "pysqlite version:", sqlite.version
-        if userandom:
-            print("using random values")
+    if verbose and userandom:
+        print("using random values")
 
     if docreate:
         if verbose:
-            print("writing %s krows" % nrows)
+            print(f"writing {nrows} krows")
         if psyco_imported and usepsyco:
             psyco.bind(create_db)
         nrows *= 1000

@@ -149,11 +149,11 @@ class Col(atom.Atom, metaclass=type):
     def _subclass_from_prefix(cls, prefix):
         """Get a column subclass for the given `prefix`."""
 
-        cname = '%sCol' % prefix
+        cname = f'{prefix}Col'
         class_from_prefix = cls._class_from_prefix
         if cname in class_from_prefix:
             return class_from_prefix[cname]
-        atombase = getattr(atom, '%sAtom' % prefix)
+        atombase = getattr(atom, f'{prefix}Atom')
 
         class NewCol(cls, atombase):
             """Defines a non-nested column of a particular type.
@@ -223,9 +223,7 @@ def _generate_col_classes():
             atomclass = kdata
             cprefixes.append(atomclass.prefix())
         else:  # dictionary: fixed item size
-            for atomclass in kdata.values():
-                cprefixes.append(atomclass.prefix())
-
+            cprefixes.extend(atomclass.prefix() for atomclass in kdata.values())
     # Bottom-level complex classes are not in the type map, of course.
     # We still want the user to get the compatibility warning, though.
     cprefixes.extend(['Complex32', 'Complex64', 'Complex128'])
@@ -235,8 +233,7 @@ def _generate_col_classes():
         cprefixes.append('Complex256')
 
     for cprefix in cprefixes:
-        newclass = Col._subclass_from_prefix(cprefix)
-        yield newclass
+        yield Col._subclass_from_prefix(cprefix)
 
 
 # Create all column classes.
@@ -435,7 +432,6 @@ class Description:
         newdict["_v_dflts"] = {}
         newdict["_v_colobjects"] = {}
         newdict["_v_is_nested"] = False
-        nestedFormats = []
         nestedDType = []
 
         if not hasattr(newdict, "_v_nestedlvl"):
@@ -500,10 +496,10 @@ class Description:
         cols_no_pos.sort()
         keys = [name for (pos, name) in cols_with_pos] + cols_no_pos
 
-        pos = 0
         nested = False
+        nestedFormats = []
         # Get properties for compound types
-        for k in keys:
+        for pos, k in enumerate(keys):
             if validate:
                 # Check for key name validity
                 check_name_validity(k)
@@ -511,25 +507,16 @@ class Description:
             object = classdict[k]
             newdict[k] = object    # To allow natural naming
             if not isinstance(object, (Col, Description)):
-                raise TypeError('Passing an incorrect value to a table column.'
-                                ' Expected a Col (or subclass) instance and '
-                                'got: "%s". Please make use of the Col(), or '
-                                'descendant, constructor to properly '
-                                'initialize columns.' % object)
+                raise TypeError(
+                    f'Passing an incorrect value to a table column. Expected a Col (or subclass) instance and got: "{object}". Please make use of the Col(), or descendant, constructor to properly initialize columns.'
+                )
             object._v_pos = pos  # Set the position of this object
             object._v_parent = self  # The parent description
-            pos += 1
             newdict['_v_colobjects'][k] = object
             newdict['_v_names'].append(k)
             object.__dict__['_v_name'] = k
 
-            if not isinstance(k, str):
-                # numpy only accepts "str" for field names
-                # Python 3.x: bytes --> str (unicode)
-                kk = k.decode()
-            else:
-                kk = k
-
+            kk = k if isinstance(k, str) else k.decode()
             if isinstance(object, Col):
                 dtype = object.dtype
                 newdict['_v_dtypes'][k] = dtype
@@ -635,9 +622,7 @@ class Description:
                     for colname in description._v_names]
 
         def join_paths(path1, path2):
-            if not path1:
-                return path2
-            return f'{path1}/{path2}'
+            return f'{path1}/{path2}' if path1 else path2
 
         # The top of the stack always has a nested description
         # and a list of its child columns
@@ -686,7 +671,7 @@ class Description:
                 assert isinstance(head, str)
                 # Assign the computed set of descendent column paths.
                 desc._v_pathnames = cols
-                if len(stack) > 0:
+                if stack:
                     # Compute the paths with respect to the parent node
                     # (including the path of the current description)
                     # and append them to its list.
@@ -721,9 +706,8 @@ type can only take the parameters 'All', 'Col' or 'Description'.""")
                 new_object = object._v_colobjects[name]
                 if isinstance(new_object, Description):
                     stack.append(new_object)
-                else:
-                    if type in ["All", "Col"]:
-                        yield new_object  # yield column
+                elif type in ["All", "Col"]:
+                    yield new_object  # yield column
 
     def __repr__(self):
         """Gives a detailed Description column representation."""
@@ -742,7 +726,7 @@ type can only take the parameters 'All', 'Col' or 'Description'.""")
 class MetaIsDescription(type):
     """Helper metaclass to return the class variables as a dictionary."""
 
-    def __new__(mcs, classname, bases, classdict):
+    def __new__(cls, classname, bases, classdict):
         """Return a new class with a "columns" attribute filled."""
 
         newdict = {"columns": {}, }
@@ -758,7 +742,7 @@ class MetaIsDescription(type):
                 newdict["columns"][k] = classdict[k]
 
         # Return a new class with the "columns" attribute filled
-        return type.__new__(mcs, classname, bases, newdict)
+        return type.__new__(cls, classname, bases, newdict)
 
 
 class IsDescription(metaclass=MetaIsDescription):
@@ -809,22 +793,22 @@ class IsDescription(metaclass=MetaIsDescription):
 def descr_from_dtype(dtype_, ptparams=None):
     """Get a description instance and byteorder from a (nested) NumPy dtype."""
 
-    fields = {}
     fbyteorder = '|'
+    fields = {}
     for name in dtype_.names:
         dtype, offset = dtype_.fields[name][:2]
         kind = dtype.base.kind
         byteorder = dtype.base.byteorder
         if byteorder in '><=':
-            if fbyteorder not in ['|', byteorder]:
+            if fbyteorder in ['|', byteorder]:
+                fbyteorder = byteorder
+            else:
                 raise NotImplementedError(
                     "structured arrays with mixed byteorders "
                     "are not supported yet, sorry")
-            fbyteorder = byteorder
         # Non-nested column
         if kind in 'biufSUc':
             col = Col.from_dtype(dtype, pos=offset, _offset=offset)
-        # Nested column
         elif kind == 'V' and dtype.shape in [(), (1,)]:
             if dtype.shape != ():
                 warnings.warn(
@@ -834,8 +818,8 @@ def descr_from_dtype(dtype_, ptparams=None):
             col._v_offset = offset
         else:
             raise NotImplementedError(
-                "structured arrays with columns with type description ``%s`` "
-                "are not supported yet, sorry" % dtype)
+                f"structured arrays with columns with type description ``{dtype}`` are not supported yet, sorry"
+            )
         fields[name] = col
 
     return Description(fields, ptparams=ptparams), fbyteorder

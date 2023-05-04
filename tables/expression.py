@@ -188,15 +188,15 @@ class Expr:
         # PyTables objects, as the reads always return contiguous and
         # aligned objects, or at least I think so).
         for name, var in vars_.items():
-            if isinstance(var, np.ndarray):
-                # See numexpr.necompiler.evaluate for a rational
-                # of the code below
-                if not var.flags.aligned:
-                    if var.ndim != 1:
-                        # Do a copy of this variable
-                        var = var.copy()
-                        # Update the vars_ dictionary
-                        vars_[name] = var
+            if (
+                isinstance(var, np.ndarray)
+                and not var.flags.aligned
+                and var.ndim != 1
+            ):
+                # Do a copy of this variable
+                var = var.copy()
+                # Update the vars_ dictionary
+                vars_[name] = var
 
         # Get the variables and types
         values = self.values
@@ -283,7 +283,7 @@ class Expr:
             elif uservars is None and var in user_globals:
                 val = user_globals[var]
             else:
-                raise NameError("name ``%s`` is not defined" % var)
+                raise NameError(f"name ``{var}`` is not defined")
 
             # Check the value.
             if hasattr(val, 'dtype') and val.dtype.str[1:] == 'u8':
@@ -495,10 +495,7 @@ value of dimensions that are orthogonal (and preferably close) to the
                 tr_oshape = list(o_shape)   # this implies a copy
                 olen_ = tr_oshape.pop(o_maindim)
                 tr_shape = list(shape)      # do a copy
-                if maindim is not None:
-                    len_ = tr_shape.pop(o_maindim)
-                else:
-                    len_ = 1
+                len_ = tr_shape.pop(o_maindim) if maindim is not None else 1
                 if tr_oshape != tr_shape:
                     raise ValueError(
                         "Shape for out container does not match expression")
@@ -522,12 +519,23 @@ value of dimensions that are orthogonal (and preferably close) to the
                 if nrows > nrowsinbuf:
                     nrowsinbuf = nrows
 
-        if not itermode:
-            return (i_nrows, slice_pos, start, stop, step, nrowsinbuf,
-                    out, o_maindim, o_start, o_stop, o_step)
-        else:
-            # For itermode, we don't need the out info
-            return (i_nrows, slice_pos, start, stop, step, nrowsinbuf)
+        return (
+            (i_nrows, slice_pos, start, stop, step, nrowsinbuf)
+            if itermode
+            else (
+                i_nrows,
+                slice_pos,
+                start,
+                stop,
+                step,
+                nrowsinbuf,
+                out,
+                o_maindim,
+                o_start,
+                o_stop,
+                o_step,
+            )
+        )
 
     def eval(self):
         """Evaluate the expression and return the outcome.
@@ -566,7 +574,7 @@ value of dimensions that are orthogonal (and preferably close) to the
         # Get different info we need for the main computation loop
         (i_nrows, slice_pos, start, stop, step, nrowsinbuf,
          out, o_maindim, o_start, o_stop, o_step) = \
-            self._get_info(shape, maindim)
+                self._get_info(shape, maindim)
 
         if i_nrows == 0:
             # No elements to compute
@@ -589,8 +597,7 @@ value of dimensions that are orthogonal (and preferably close) to the
         # Start the computation itself
         for start2 in range(start, stop, step * nrowsinbuf):
             stop2 = start2 + step * nrowsinbuf
-            if stop2 > stop:
-                stop2 = stop
+            stop2 = min(stop2, stop)
             # Set the proper slice for inputs
             i_slices[maindim] = slice(start2, stop2, step)
             # Get the input values
@@ -611,8 +618,7 @@ value of dimensions that are orthogonal (and preferably close) to the
                 # Compute the slice to be filled in output
                 start3 = o_start + (start2 - start) // step
                 stop3 = start3 + nrowsinbuf * o_step
-                if stop3 > o_stop:
-                    stop3 = o_stop
+                stop3 = min(stop3, o_stop)
                 o_slices[o_maindim] = slice(start3, stop3, o_step)
                 # Set the slice
                 out[tuple(o_slices)] = rout
@@ -636,7 +642,7 @@ value of dimensions that are orthogonal (and preferably close) to the
 
         # Get different info we need for the main computation loop
         (i_nrows, slice_pos, start, stop, step, nrowsinbuf) = \
-            self._get_info(shape, maindim, itermode=True)
+                self._get_info(shape, maindim, itermode=True)
 
         if i_nrows == 0:
             # No elements to compute
@@ -655,8 +661,7 @@ value of dimensions that are orthogonal (and preferably close) to the
         # Start the computation itself
         for start2 in range(start, stop, step * nrowsinbuf):
             stop2 = start2 + step * nrowsinbuf
-            if stop2 > stop:
-                stop2 = stop
+            stop2 = min(stop2, stop)
             # Set the proper slice in the main dimension
             i_slices[maindim] = slice(start2, stop2, step)
             # Get the values for computing the buffer
@@ -668,11 +673,7 @@ value of dimensions that are orthogonal (and preferably close) to the
                     # A read of values is not apparently needed, as PyTables
                     # leaves seems to work just fine inside Numexpr
                     vals.append(val)
-            # Do the actual computation
-            rout = self._compiled_expr(*vals)
-            # Return one row per call
-            yield from rout
-
+            yield from self._compiled_expr(*vals)
         # Activate the conversion again (default)
         for val in values:
             if hasattr(val, 'maindim'):

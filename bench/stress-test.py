@@ -51,10 +51,9 @@ def readFileArr(filename, ngroups, recsize, verbose):
         fileh = tb.open_file(filename, mode="r", root_uep='group%04d' % ngroup)
         # Get the group
         group = fileh.root
-        narrai = 0
         if verbose:
             print("Group ==>", group)
-        for arrai in fileh.list_nodes(group, 'Array'):
+        for narrai, arrai in enumerate(fileh.list_nodes(group, 'Array')):
             if verbose > 1:
                 print("Array ==>", arrai)
                 print("Rows in", arrai._v_pathname, ":", arrai.shape)
@@ -62,8 +61,6 @@ def readFileArr(filename, ngroups, recsize, verbose):
             arr = arrai.read()
 
             rowsread += len(arr)
-            narrai += 1
-
         # Close the file (eventually destroy the extended type)
         fileh.close()
 
@@ -128,10 +125,9 @@ def readFile(filename, ngroups, recsize, verbose):
         fileh = tb.open_file(filename, mode="r", root_uep='group%04d' % ngroup)
         # Get the group
         group = fileh.root
-        ntable = 0
         if verbose:
             print("Group ==>", group)
-        for table in fileh.list_nodes(group, 'Table'):
+        for ntable, table in enumerate(fileh.list_nodes(group, 'Table')):
             rowsize = table.rowsize
             buffersize = table.rowsize * table.nrowsinbuf
             if verbose > 1:
@@ -156,8 +152,6 @@ def readFile(filename, ngroups, recsize, verbose):
 
             assert nrow == table.nrows
             rowsread += table.nrows
-            ntable += 1
-
         # Close the file (eventually destroy the extended type)
         fileh.close()
 
@@ -180,17 +174,13 @@ class TrackRefs:
         for o in obs:
             all = sys.getrefcount(o)
             t = type(o)
-            if verbose:
-                # if t == types.TupleType:
-                if isinstance(o, tb.Group):
+            if verbose and isinstance(o, tb.Group):
                 # if isinstance(o, MetaIsDescription):
-                    print("-->", o, "refs:", all)
-                    refrs = gc.get_referrers(o)
-                    trefrs = []
-                    for refr in refrs:
-                        trefrs.append(type(refr))
-                    print("Referrers -->", refrs)
-                    print("Referrers types -->", trefrs)
+                print("-->", o, "refs:", all)
+                refrs = gc.get_referrers(o)
+                trefrs = [type(refr) for refr in refrs]
+                print("Referrers -->", refrs)
+                print("Referrers types -->", trefrs)
             # if t == types.StringType: print "-->",o
             if t in type2count:
                 type2count[t] += 1
@@ -199,10 +189,16 @@ class TrackRefs:
                 type2count[t] = 1
                 type2all[t] = all
 
-        ct = sorted([(type2count[t] - self.type2count.get(t, 0),
-                      type2all[t] - self.type2all.get(t, 0),
-                      t)
-                     for t in type2count.keys()])
+        ct = sorted(
+            [
+                (
+                    type2count[t] - self.type2count.get(t, 0),
+                    type2all[t] - self.type2all.get(t, 0),
+                    t,
+                )
+                for t in type2count
+            ]
+        )
         ct.reverse()
         for delta1, delta2, t in ct:
             if delta1 or delta2:
@@ -216,12 +212,12 @@ def dump_refs(preheat=10, iter1=10, iter2=10, *testargs):
 
     rc1 = rc2 = None
     # testMethod()
-    for i in range(preheat):
+    for _ in range(preheat):
         testMethod(*testargs)
     gc.collect()
     rc1 = sys.gettotalrefcount()
     track = TrackRefs()
-    for i in range(iter1):
+    for _ in range(iter1):
         testMethod(*testargs)
     print("First output of TrackRefs:")
     gc.collect()
@@ -229,7 +225,7 @@ def dump_refs(preheat=10, iter1=10, iter2=10, *testargs):
     track.update()
     print("Inc refs in function testMethod --> %5d" % (rc2 - rc1),
           file=sys.stderr)
-    for i in range(iter2):
+    for _ in range(iter2):
         testMethod(*testargs)
         track.update(verbose=1)
     print("Second output of TrackRefs:")
@@ -248,9 +244,8 @@ def dump_garbage():
 
     print("\nGARBAGE OBJECTS:")
     for x in gc.garbage:
-        s = str(x)
         #if len(s) > 80: s = s[:77] + "..."
-        print(type(x), "\n   ", s)
+        print(type(x), "\n   ", x)
 
     # print "\nTRACKED OBJECTS:"
     # reportLoggedInstances("*")

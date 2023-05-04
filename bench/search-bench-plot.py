@@ -135,13 +135,4 @@ if __name__ == '__main__':
         #plots.append(loglog(xval, yval, linewidth=5))
         plots.append(semilogx(xval, yval, linewidth=4))
         legends.append(plegend)
-    if 0:  # Per a introduir dades simulades si es vol...
-        xval = [1000, 10_000, 100_000, 1_000_000, 10_000_000,
-                100_000_000, 1_000_000_000]
-#         yval = [0.003, 0.005, 0.02, 0.06, 1.2,
-#                 40, 210]
-        yval = [0.0009, 0.0011, 0.0022, 0.005, 0.02,
-                0.2, 5.6]
-        plots.append(loglog(xval, yval, linewidth=5))
-        legends.append("PyTables Std")
     show_plot(plots, yaxis, legends, gtitle)

@@ -20,9 +20,8 @@ def get_values(filename):
         if show_memory:
             if line.startswith('VmData:'):
                 values.append(float(line.split()[1]) / 1024)
-        else:
-            if line.startswith('WallClock time:'):
-                values.append(float(line.split(':')[1]))
+        elif line.startswith('WallClock time:'):
+            values.append(float(line.split(':')[1]))
     return values
 
 
@@ -34,8 +33,7 @@ def plot_bar(values, n):
         if n == 0:
             checks.pop()
             ind = arange(len(checks))
-    p = bar(ind + width * n, values, width, color=colors[n])
-    return p
+    return bar(ind + width * n, values, width, color=colors[n])
 
 
 def show_plot(bars, filenames, tit):
@@ -47,12 +45,7 @@ def show_plot(bars, filenames, tit):
     n = len(filenames)
     xticks(ind + width * n / 2, checks, rotation=45,
            horizontalalignment='right', fontsize=8)
-    if not gtotal:
-        #loc = 'center right'
-        loc = 'upper left'
-    else:
-        loc = 'center left'
-
+    loc = 'center left' if gtotal else 'upper left'
     legends = [f[:f.index('_')] for f in filenames]
     legends = [l.replace('-', ' ') for l in legends]
     legend([p[0] for p in bars], legends, loc=loc)
@@ -108,10 +101,8 @@ if __name__ == '__main__':
 
     filenames = pargs
     bars = []
-    n = 0
-    for filename in filenames:
+    for n, filename in enumerate(filenames):
         values = get_values(filename)
         print("Values-->", values)
         bars.append(plot_bar(values, n))
-        n += 1
     show_plot(bars, filenames, tit)

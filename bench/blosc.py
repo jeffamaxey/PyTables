@@ -20,16 +20,8 @@ def create_file(kind, prec, synth):
     iname = dirname + prefix_orig + 'none-' + prec + '.h5'
     f = tb.open_file(iname, "r")
 
-    if prec == "single":
-        type_ = tb.Float32Atom()
-    else:
-        type_ = tb.Float64Atom()
-
-    if synth:
-        prefix = 'synth/synth-'
-    else:
-        prefix = 'cellzome/cellzome-'
-
+    type_ = tb.Float32Atom() if prec == "single" else tb.Float64Atom()
+    prefix = 'synth/synth-' if synth else 'cellzome/cellzome-'
     for clevel in range(10):
         oname = '%s/%s-%s%d-%s.h5' % (dirname, prefix, kind, clevel, prec)
         # print "creating...", iname
@@ -44,10 +36,7 @@ def create_file(kind, prec, synth):
         for name in ['maxarea', 'mascotscore']:
             col = f.get_node('/', name)
             r = f2.create_carray('/', name, type_, col.shape, filters=filters)
-            if synth:
-                r[:] = np.arange(col.nrows, dtype=type_.dtype)
-            else:
-                r[:] = col[:]
+            r[:] = np.arange(col.nrows, dtype=type_.dtype) if synth else col[:]
         f2.close()
         if clevel == 0:
             size = 1.5 * Path(oname).stat().st_size
@@ -61,11 +50,7 @@ def create_synth(kind, prec):
     iname = dirname + prefix_orig + 'none-' + prec + '.h5'
     f = tb.open_file(iname, "r")
 
-    if prec == "single":
-        type_ = tb.Float32Atom()
-    else:
-        type_ = tb.Float64Atom()
-
+    type_ = tb.Float32Atom() if prec == "single" else tb.Float64Atom()
     prefix = 'synth/synth-'
     for clevel in range(10):
         oname = '%s/%s-%s%d-%s.h5' % (dirname, prefix, kind, clevel, prec)
@@ -95,14 +80,8 @@ def create_synth(kind, prec):
 
 def process_file(kind, prec, clevel, synth):
 
-    if kind == "numpy":
-        lib = "none"
-    else:
-        lib = kind
-    if synth:
-        prefix = 'synth/synth-'
-    else:
-        prefix = 'cellzome/cellzome-'
+    lib = "none" if kind == "numpy" else kind
+    prefix = 'synth/synth-' if synth else 'cellzome/cellzome-'
     iname = '%s/%s-%s%d-%s.h5' % (dirname, prefix, kind, clevel, prec)
     f = tb.open_file(iname, "r")
     a_ = f.root.maxarea
@@ -114,10 +93,7 @@ def process_file(kind, prec, clevel, synth):
         filters = None
     else:
         filters = tb.Filters(complib=lib, complevel=clevel, shuffle=shuffle)
-    if prec == "single":
-        type_ = tb.Float32Atom()
-    else:
-        type_ = tb.Float64Atom()
+    type_ = tb.Float32Atom() if prec == "single" else tb.Float64Atom()
     r = f2.create_carray('/', 'r', type_, a_.shape, filters=filters)
 
     if kind == "numpy":
@@ -131,18 +107,14 @@ def process_file(kind, prec, clevel, synth):
         expr.eval()
     f.close()
     f2.close()
-    size = Path(iname).stat().st_size + Path(oname).stat().st_size
-    return size
+    return Path(iname).stat().st_size + Path(oname).stat().st_size
 
 
 if __name__ == '__main__':
     if len(sys.argv) > 3:
         kind = sys.argv[1]
         prec = sys.argv[2]
-        if sys.argv[3] == "synth":
-            synth = True
-        else:
-            synth = False
+        synth = sys.argv[3] == "synth"
     else:
         print("3 parameters required")
         sys.exit(1)
@@ -156,7 +128,7 @@ if __name__ == '__main__':
     for clevel in range(10):
         t0 = clock()
         ts = []
-        for i in range(niter):
+        for _ in range(niter):
             size = process_file(kind, prec, clevel, synth)
             ts.append(clock() - t0)
             t0 = clock()

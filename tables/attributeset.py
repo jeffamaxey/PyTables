@@ -528,8 +528,8 @@ be ready to see PyTables asking for *lots* of memory and possibly slow I/O"""
         # Check if attribute exists
         if name not in self._v_attrnames:
             raise AttributeError(
-                "Attribute ('%s') does not exist in node '%s'"
-                % (name, self._v__nodepath))
+                f"Attribute ('{name}') does not exist in node '{self._v__nodepath}'"
+            )
 
         nodefile._check_writable()
 
@@ -547,8 +547,8 @@ be ready to see PyTables asking for *lots* of memory and possibly slow I/O"""
         except AttributeError:
             # Capture the AttributeError an re-raise a KeyError one
             raise KeyError(
-                "Attribute ('%s') does not exist in node '%s'"
-                % (name, self._v__nodepath))
+                f"Attribute ('{name}') does not exist in node '{self._v__nodepath}'"
+            )
 
     def __setitem__(self, name, value):
         """The dictionary like interface for __setattr__()."""
@@ -563,8 +563,8 @@ be ready to see PyTables asking for *lots* of memory and possibly slow I/O"""
         except AttributeError:
             # Capture the AttributeError an re-raise a KeyError one
             raise KeyError(
-                "Attribute ('%s') does not exist in node '%s'"
-                % (name, self._v__nodepath))
+                f"Attribute ('{name}') does not exist in node '{self._v__nodepath}'"
+            )
 
     def __contains__(self, name):
         """Is there an attribute with that name?
@@ -671,9 +671,7 @@ be ready to see PyTables asking for *lots* of memory and possibly slow I/O"""
     def __repr__(self):
         """A detailed string representation for this object."""
 
-        # print additional info only if there are attributes to show
-        attrnames = list(self._v_attrnames)
-        if attrnames:
+        if attrnames := list(self._v_attrnames):
             rep = [f'{attr} := {getattr(self, attr)!r}' for attr in attrnames]
             return f"{self!s}:\n   [" + ',\n    '.join(rep) + "]"
         else:

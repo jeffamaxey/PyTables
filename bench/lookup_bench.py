@@ -30,13 +30,14 @@ class DB:
         self.dtype = dtype
         self.docompress = docompress
         self.complib = complib
-        self.filename = '-'.join([rdm_cod[userandom],
-                                  "n" + nrows, "s" + chunksize, dtype])
+        self.filename = '-'.join(
+            [rdm_cod[userandom], f"n{nrows}", f"s{chunksize}", dtype]
+        )
         # Complete the filename
-        self.filename = "lookup-" + self.filename
+        self.filename = f"lookup-{self.filename}"
         if docompress:
-            self.filename += '-' + complib + str(docompress)
-        self.filename = datadir + '/' + self.filename + '.h5'
+            self.filename += f'-{complib}{str(docompress)}'
+        self.filename = f'{datadir}/{self.filename}.h5'
         print("Processing database:", self.filename)
         self.userandom = userandom
         self.nrows = get_nrows(nrows)
@@ -45,9 +46,10 @@ class DB:
         self.scale = NOISE
 
     def get_db_size(self):
-        sout = subprocess.Popen("sync;du -s %s" % self.filename, shell=True,
-                                stdout=subprocess.PIPE).stdout
-        line = [l for l in sout][0]
+        sout = subprocess.Popen(
+            f"sync;du -s {self.filename}", shell=True, stdout=subprocess.PIPE
+        ).stdout
+        line = list(sout)[0]
         return int(line.split()[0])
 
     def print_mtime(self, t1, explain):
@@ -62,8 +64,7 @@ class DB:
     def open_db(self, remove=0):
         if remove and Path(self.filename).is_file():
             Path(self.filename).unlink()
-        con = tb.open_file(self.filename, 'a')
-        return con
+        return tb.open_file(self.filename, 'a')
 
     def create_db(self, verbose):
         self.con = self.open_db(remove=1)
@@ -89,15 +90,12 @@ class DB:
     def fill_array(self):
         "Fills the array"
         earray = self.con.root.earray
-        j = 0
         arr = self.get_array(0, self.step)
-        for i in range(0, self.nrows, self.step):
+        for j, _ in enumerate(range(0, self.nrows, self.step)):
             stop = (j + 1) * self.step
-            if stop > self.nrows:
-                stop = self.nrows
+            stop = min(stop, self.nrows)
             ###arr = self.get_array(i, stop, dtype)
             earray.append(arr)
-            j += 1
         earray.flush()
 
     def get_array(self, start, stop):
@@ -113,26 +111,18 @@ class DB:
         print("Histogram times:\n", np.histogram(ltimes[1:]))
         ntimes = len(ltimes)
         qtime1 = ltimes[0]  # First measured time
-        if ntimes > 5:
-            # Wait until the 5th iteration (in order to
-            # ensure that the index is effectively cached) to take times
-            qtime2 = sum(ltimes[5:]) / (ntimes - 5)
-        else:
-            qtime2 = ltimes[-1]  # Last measured time
+        qtime2 = sum(ltimes[5:]) / (ntimes - 5) if ntimes > 5 else ltimes[-1]
         print(f"1st query time: {qtime1:.3f}")
         print(f"Mean (skipping the first 5 meas.): {qtime2:.3f}")
 
     def query_db(self, niter, avoidfscache, verbose):
         self.con = self.open_db()
         earray = self.con.root.earray
-        if avoidfscache:
-            rseed = int(np.random.randint(self.nrows))
-        else:
-            rseed = 19
+        rseed = int(np.random.randint(self.nrows)) if avoidfscache else 19
         np.random.seed(rseed)
         np.random.randint(self.nrows)
         ltimes = []
-        for i in range(niter):
+        for _ in range(niter):
             t1 = clock()
             self.do_query(earray, np.random.randint(self.nrows))
             ltimes.append(clock() - t1)
@@ -222,17 +212,16 @@ if __name__ == "__main__":
         # in order to always generate the same random sequence
         np.random.seed(20)
 
-    if verbose:
-        if userandom:
-            print("using random values")
+    if verbose and userandom:
+        print("using random values")
 
     db = DB(krows, dtype, chunksize, userandom, datadir, docompress, complib)
 
     if docreate:
         if verbose:
-            print("writing %s rows" % krows)
+            print(f"writing {krows} rows")
         db.create_db(verbose)
 
     if doquery:
-        print("Calling query_db() %s times" % niter)
+        print(f"Calling query_db() {niter} times")
         db.query_db(niter, avoidfscache, verbose)

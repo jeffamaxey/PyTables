@@ -58,16 +58,16 @@ def get_values(filename):
                 qtime = float(tmp[:tmp.index('+-')])
             except ValueError:
                 qtime = float(tmp)
-            if colname in line:
-                if query and '1st' in line:
-                    sizes.append(isize)
-                    values.append(qtime)
-                elif query_cold and 'cold' in line:
-                    sizes.append(isize)
-                    values.append(qtime)
-                elif query_warm and 'warm' in line:
-                    sizes.append(isize)
-                    values.append(qtime)
+            if colname in line and (
+                query
+                and '1st' in line
+                or query_cold
+                and 'cold' in line
+                or query_warm
+                and 'warm' in line
+            ):
+                sizes.append(isize)
+                values.append(qtime)
     return sizes, values
 
 
@@ -161,7 +161,7 @@ if __name__ == '__main__':
         elif option[0] == '--create-index':
             create_index = option[1]
             yaxis = "Time (s)"
-            gtitle = "Create index time for column " + create_index
+            gtitle = f"Create index time for column {create_index}"
         elif option[0] == '--create-total':
             create_total = 1
             yaxis = "Time (s)"
@@ -182,17 +182,17 @@ if __name__ == '__main__':
             query = 1
             colname = option[1]
             yaxis = "Time (s)"
-            gtitle = "Query time for " + colname + " column (first query)"
+            gtitle = f"Query time for {colname} column (first query)"
         elif option[0] == '--query-cold':
             query_cold = 1
             colname = option[1]
             yaxis = "Time (s)"
-            gtitle = "Query time for " + colname + " column (cold cache)"
+            gtitle = f"Query time for {colname} column (cold cache)"
         elif option[0] == '--query-warm':
             query_warm = 1
             colname = option[1]
             yaxis = "Time (s)"
-            gtitle = "Query time for " + colname + " column (warm cache)"
+            gtitle = f"Query time for {colname} column (warm cache)"
 
     filenames = pargs
 
@@ -217,13 +217,4 @@ if __name__ == '__main__':
             #plots.append(semilogx(xval, yval, linewidth=3, color='m'))
         #plots.append(semilogx(xval, yval, linewidth=5))
         legends.append(plegend)
-    if 0:  # Per a introduir dades simulades si es vol...
-        xval = [1000, 10_000, 100_000, 1_000_000, 10_000_000,
-                100_000_000, 1_000_000_000]
-#         yval = [0.003, 0.005, 0.02, 0.06, 1.2,
-#                 40, 210]
-        yval = [0.0009, 0.0011, 0.0022, 0.005, 0.02,
-                0.2, 5.6]
-        plots.append(loglog(xval, yval, linewidth=5))
-        legends.append("PyTables Std")
     show_plot(plots, yaxis, legends, gtitle)

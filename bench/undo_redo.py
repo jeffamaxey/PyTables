@@ -41,13 +41,13 @@ class BasicBenchmark:
 
         for i in range(self.nobjects):
             # Create a new array
-            self.fileh.create_array('/', 'array' + str(i), self.a1)
+            self.fileh.create_array('/', f'array{str(i)}', self.a1)
             # Put a mark
             self.fileh.mark()
         # Unwind all marks sequentially
-        for i in range(self.niter):
+        for _ in range(self.niter):
             t1 = clock()
-            for i in range(self.nobjects):
+            for _ in range(self.nobjects):
                 self.fileh.undo()
                 if verbose:
                     print("u", end=' ')
@@ -56,7 +56,7 @@ class BasicBenchmark:
             undo = clock() - t1
             # Rewind all marks sequentially
             t1 = clock()
-            for i in range(self.nobjects):
+            for _ in range(self.nobjects):
                 self.fileh.redo()
                 if verbose:
                     print("r", end=' ')
@@ -74,19 +74,19 @@ class BasicBenchmark:
         # Create several objects there
         for i in range(10):
             # Create a new array
-            self.fileh.create_array('/agroup', 'array' + str(i), self.a1)
+            self.fileh.create_array('/agroup', f'array{str(i)}', self.a1)
         # Excercise copy_children
         for i in range(self.nobjects):
             # Create another group for destination
-            self.fileh.create_group('/', 'anothergroup' + str(i))
+            self.fileh.create_group('/', f'anothergroup{str(i)}')
             # Copy children from /agroup to /anothergroup+i
-            self.fileh.copy_children('/agroup', '/anothergroup' + str(i))
+            self.fileh.copy_children('/agroup', f'/anothergroup{str(i)}')
             # Put a mark
             self.fileh.mark()
         # Unwind all marks sequentially
-        for i in range(self.niter):
+        for _ in range(self.niter):
             t1 = clock()
-            for i in range(self.nobjects):
+            for _ in range(self.nobjects):
                 self.fileh.undo()
                 if verbose:
                     print("u", end=' ')
@@ -95,7 +95,7 @@ class BasicBenchmark:
             undo = clock() - t1
             # Rewind all marks sequentially
             t1 = clock()
-            for i in range(self.nobjects):
+            for _ in range(self.nobjects):
                 self.fileh.redo()
                 if verbose:
                     print("r", end=' ')
@@ -113,13 +113,13 @@ class BasicBenchmark:
         self.fileh.create_array('/', 'array', self.a1)
         for i in range(self.nobjects):
             # Set an attribute
-            setattr(self.fileh.root.array.attrs, "attr" + str(i), str(self.a1))
+            setattr(self.fileh.root.array.attrs, f"attr{str(i)}", str(self.a1))
             # Put a mark
             self.fileh.mark()
         # Unwind all marks sequentially
-        for i in range(self.niter):
+        for _ in range(self.niter):
             t1 = clock()
-            for i in range(self.nobjects):
+            for _ in range(self.nobjects):
                 self.fileh.undo()
                 if verbose:
                     print("u", end=' ')
@@ -128,7 +128,7 @@ class BasicBenchmark:
             undo = clock() - t1
             # Rewind all marks sequentially
             t1 = clock()
-            for i in range(self.nobjects):
+            for _ in range(self.nobjects):
                 self.fileh.redo()
                 if verbose:
                     print("r", end=' ')

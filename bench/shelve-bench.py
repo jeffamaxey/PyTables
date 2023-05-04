@@ -77,10 +77,10 @@ def createFile(filename, totalrows, recsize):
         # table = fileh.create_table(group, 'tuple'+str(j), Record(), title,
         #                          compress = 6, expectedrows = totalrows)
         # Create a Table instance
-        tablename = 'tuple' + str(j)
+        tablename = f'tuple{str(j)}'
         table = []
         # Fill the table
-        if recsize == "big" or recsize == "medium":
+        if recsize in ["big", "medium"]:
             for i in range(totalrows):
                 d.name = 'Particle: %6d' % (i)
                 #d.TDCcount = i % 256
@@ -92,7 +92,6 @@ def createFile(filename, totalrows, recsize):
                     d.float1 = arr
                     arr2[0] = 2.2
                     d.float2 = arr2
-                    pass
                 else:
                     d.float1 = np.array([i ** 2] * 2, np.float64)
                     #d.float1 = float(i)
@@ -103,9 +102,9 @@ def createFile(filename, totalrows, recsize):
                 d.energy = float(d.pressure ** 4)
                 table.append((d.ADCcount, d.energy, d.float1, d.float2,
                               d.grid_i, d.grid_j, d.name, d.pressure))
-                # Only on float case
-                # table.append((d.ADCcount, d.energy, d.float1,
-                #              d.grid_i, d.grid_j, d.name, d.pressure))
+                            # Only on float case
+                            # table.append((d.ADCcount, d.energy, d.float1,
+                            #              d.grid_i, d.grid_j, d.name, d.pressure))
         else:
             for i in range(totalrows):
                 d.var1 = str(i)
@@ -126,7 +125,7 @@ def readFile(filename, recsize):
     # Open the HDF5 file in read-only mode
     fileh = shelve.open(filename, "r")
     for table in ['tuple0', 'tuple1', 'tuple2']:
-        if recsize == "big" or recsize == "medium":
+        if recsize in ["big", "medium"]:
             e = [t[2] for t in fileh[table] if t[4] < 20]
             # if there is only one float (array)
             #e = [ t[1] for t in fileh[table] if t[3] < 20 ]

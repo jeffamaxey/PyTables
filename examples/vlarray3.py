@@ -3,6 +3,7 @@
 """Example that shows how to easily save a variable number of atoms with a
 VLArray."""
 
+
 import numpy as np
 import tables as tb
 
@@ -16,9 +17,9 @@ vlarray = f.create_vlarray(f.root, 'vlarray1',
                            "ragged array of arrays")
 
 k = 0
-for i in range(N):
+for _ in range(N):
     l = []
-    for j in range(np.random.randint(N)):
+    for _ in range(np.random.randint(N)):
         l.append(np.random.randn(*shape))
         k += 1
     vlarray.append(l)

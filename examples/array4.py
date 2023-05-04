@@ -31,7 +31,7 @@ for i, dtype in enumerate(dtypes, 1):
     # Create an array for later comparison
     a = np.ones((basedim,) * i, dtype)
     # Get the dset object hangin from group
-    dset = getattr(group, 'array_' + a.dtype.char)
+    dset = getattr(group, f'array_{a.dtype.char}')
     print(f"Info from dataset: {dset!r}")
     # Read the actual data in array
     b = dset.read()

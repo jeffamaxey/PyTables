@@ -66,10 +66,9 @@ def readFile(filename, ngroups, recsize, verbose):
         fileh = tb.open_file(filename, mode="r", root_uep='group%04d' % ngroup)
         # Get the group
         group = fileh.root
-        ntable = 0
         if verbose:
             print("Group ==>", group)
-        for table in fileh.list_nodes(group, 'Table'):
+        for ntable, table in enumerate(fileh.list_nodes(group, 'Table')):
             rowsize = table.rowsize
             buffersize = table.rowsize * table.nrowsinbuf
             if verbose > 1:
@@ -100,8 +99,6 @@ def readFile(filename, ngroups, recsize, verbose):
 
             assert nrow == table.nrows
             rowsread += table.nrows
-            ntable += 1
-
         # Close the file (eventually destroy the extended type)
         fileh.close()
 
@@ -116,9 +113,8 @@ def dump_garbage():
 
     print("\nGARBAGE OBJECTS:")
     for x in gc.garbage:
-        s = str(x)
         #if len(s) > 80: s = s[:77] + "..."
-        print(type(x), "\n   ", s)
+        print(type(x), "\n   ", x)
 
 if __name__ == "__main__":
     import getopt

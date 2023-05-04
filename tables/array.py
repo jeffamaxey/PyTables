@@ -90,10 +90,7 @@ class Array(hdf5extension.Array, Leaf):
     @property
     def nrows(self):
         """The number of rows in the array."""
-        if self.shape == ():
-            return SizeType(1)  # scalar case
-        else:
-            return self.shape[self.maindim]
+        return SizeType(1) if self.shape == () else self.shape[self.maindim]
 
     @property
     def rowsize(self):
@@ -234,8 +231,7 @@ class Array(hdf5extension.Array, Leaf):
         """
 
         if self.atom.kind != 'enum':
-            raise TypeError("array ``%s`` is not of an enumerated type"
-                            % self._v_pathname)
+            raise TypeError(f"array ``{self._v_pathname}`` is not of an enumerated type")
 
         return self.atom.enum
 
@@ -329,8 +325,7 @@ class Array(hdf5extension.Array, Leaf):
             if self._row + 1 >= self.nrowsinbuf or self._row < 0:
                 self._stopb = self._startb + self._step * self.nrowsinbuf
                 # Protection for reading more elements than needed
-                if self._stopb > self._stop:
-                    self._stopb = self._stop
+                self._stopb = min(self._stopb, self._stop)
                 listarr = self._read(self._startb, self._stopb, self._step)
                 # Swap the axes to easy the return of elements
                 if self.extdim > 0:
@@ -343,10 +338,7 @@ class Array(hdf5extension.Array, Leaf):
             self._nrowsread += self._step
             # Fixes bug #968132
             # if self.listarr.shape:
-            if self.shape:
-                return self.listarr[self._row]
-            else:
-                return self.listarr    # Scalar case
+            return self.listarr[self._row] if self.shape else self.listarr
 
     def _interpret_indexing(self, keys):
         """Internal routine used by __getitem__ and __setitem__"""
@@ -373,8 +365,7 @@ class Array(hdf5extension.Array, Leaf):
                     stepl[dim] = 1
                     dim += 1
             elif dim >= maxlen:
-                raise IndexError("Too many indices for object '%s'" %
-                                 self._v_pathname)
+                raise IndexError(f"Too many indices for object '{self._v_pathname}'")
             elif is_idx(key):
                 key = operator.index(key)
 
@@ -391,7 +382,7 @@ class Array(hdf5extension.Array, Leaf):
                 start, stop, step = self._process_range(
                     key.start, key.stop, key.step, dim=dim)
             else:
-                raise TypeError("Non-valid index or slice: %s" % key)
+                raise TypeError(f"Non-valid index or slice: {key}")
             if not ellipsis:
                 startl[dim] = start
                 stopl[dim] = stop
@@ -469,19 +460,9 @@ class Array(hdf5extension.Array, Leaf):
             """
 
             start, stop, step = exp.start, exp.stop, exp.step
-            if start is None:
-                start = 0
-            else:
-                start = int(start)
-            if stop is None:
-                stop = length
-            else:
-                stop = int(stop)
-            if step is None:
-                step = 1
-            else:
-                step = int(step)
-
+            start = 0 if start is None else int(start)
+            stop = length if stop is None else int(stop)
+            step = 1 if step is None else int(step)
             if step < 1:
                 raise IndexError("Step must be >= 1 (got %d)" % step)
             if stop == start:
@@ -535,7 +516,7 @@ class Array(hdf5extension.Array, Leaf):
                     mshape.append(0)  # Keep track of scalar index for NumPy
                 else:
                     mshape.append(len(exp))
-                if len(exp) == 0:
+                if not exp:
                     raise IndexError(
                         "Empty selections are not allowed (axis %d)" % idx)
                 elif len(exp) > 1:
@@ -708,16 +689,15 @@ class Array(hdf5extension.Array, Leaf):
 
         """
 
-        if nparr.shape != (slice_shape + self.atom.dtype.shape):
-            # Create an array compliant with the specified shape
-            narr = np.empty(shape=slice_shape, dtype=self.atom.dtype)
-
-            # Assign the value to it. It will raise a ValueError exception
-            # if the objects cannot be broadcast to a single shape.
-            narr[...] = nparr
-            return narr
-        else:
+        if nparr.shape == slice_shape + self.atom.dtype.shape:
             return nparr
+        # Create an array compliant with the specified shape
+        narr = np.empty(shape=slice_shape, dtype=self.atom.dtype)
+
+        # Assign the value to it. It will raise a ValueError exception
+        # if the objects cannot be broadcast to a single shape.
+        narr[...] = nparr
+        return narr
 
     def _read_slice(self, startl, stopl, stepl, shape):
         """Read a slice based on `startl`, `stopl` and `stepl`."""
@@ -859,8 +839,7 @@ class Array(hdf5extension.Array, Leaf):
 
         self._g_check_open()
         if out is not None and self.flavor != 'numpy':
-            msg = ("Optional 'out' argument may only be supplied if array "
-                   "flavor is 'numpy', currently is {}").format(self.flavor)
+            msg = f"Optional 'out' argument may only be supplied if array flavor is 'numpy', currently is {self.flavor}"
             raise TypeError(msg)
         (start, stop, step) = self._process_range_read(start, stop, step)
         arr = self._read(start, stop, step, out)
@@ -874,10 +853,7 @@ class Array(hdf5extension.Array, Leaf):
         (start, stop, step) = self._process_range_read(start, stop, step)
         # Get the slice of the array
         # (non-buffered version)
-        if self.shape:
-            arr = self[start:stop:step]
-        else:
-            arr = self[()]
+        arr = self[start:stop:step] if self.shape else self[()]
         # Build the new Array object.  Use the _atom reserved keyword
         # just in case the array is being copied from a native HDF5
         # with atomic types different from scalars.

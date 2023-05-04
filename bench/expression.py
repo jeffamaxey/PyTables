@@ -133,14 +133,13 @@ if __name__ == "__main__":
         sys.stderr.write(usage)
         sys.exit(1)
 
-    # default options
-    usepytables = False
     usememmap = False
     docompute = False
     dowrite = False
     verbose = False
     complib = None
 
+    usepytables = False
     # Get the options
     for option in opts:
         if option[0] == '-T':
@@ -156,8 +155,7 @@ if __name__ == "__main__":
         elif option[0] == '-z':
             complib = option[1]
             if complib not in ('blosc', 'lzo', 'zlib'):
-                print("complib must be 'lzo' or 'zlib' "
-                       "and you passed: '%s'" % complib)
+                print(f"complib must be 'lzo' or 'zlib' and you passed: '{complib}'")
                 sys.exit(1)
 
     # If not a backend selected, abort

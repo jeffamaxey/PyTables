@@ -2,6 +2,7 @@
 
 """Setup script for the tables package"""
 
+
 import os
 import sys
 import ctypes
@@ -21,7 +22,7 @@ from packaging.version import Version
 
 # The name for the pkg-config utility
 PKG_CONFIG = "pkg-config"
-COPY_DLLS = bool(os.environ.get('COPY_DLLS', 'FALSE') == 'TRUE')
+COPY_DLLS = os.environ.get('COPY_DLLS', 'FALSE') == 'TRUE'
 
 
 # Some functions for showing errors and warnings.
@@ -47,9 +48,7 @@ def print_warning(head, body=""):
 def get_version(filename):
     import re
 
-    with open(filename) as fd:
-        data = fd.read()
-
+    data = Path(filename).read_text()
     mobj = re.search(
         r'''^__version__\s*=\s*(?P<quote>['"])(?P<version>.*)(?P=quote)''',
         data, re.MULTILINE)
@@ -100,9 +99,11 @@ def newer(source, target):
     if not source.exists():
         raise FileNotFoundError(f"file '{source.absolute()}' does not exist")
     target = Path(target)
-    if not target.exists():
-        return True
-    return source.stat().st_mtime > target.stat().st_mtime
+    return (
+        source.stat().st_mtime > target.stat().st_mtime
+        if target.exists()
+        else True
+    )
 
 
 # https://github.com/pypa/setuptools/issues/2806
@@ -394,10 +395,7 @@ if __name__ == "__main__":
 
             directories = [None, None, None]  # headers, libraries, runtime
             for idx, (name, find_path, default_dirs) in enumerate(dirdata):
-                path = find_path(
-                    pkgconfig_dirs[idx] or locations or default_dirs
-                )
-                if path:
+                if path := find_path(pkgconfig_dirs[idx] or locations or default_dirs):
                     if path is True:
                         directories[idx] = True
                         continue

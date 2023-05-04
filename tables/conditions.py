@@ -34,7 +34,7 @@ def _unsupported_operation_error(exception):
 
     message = exception.args[0]
     op, types = _no_matching_opcode.search(message).groups()
-    newmessage = "unsupported operand types for *%s*: " % op
+    newmessage = f"unsupported operand types for *{op}*: "
     newmessage += ', '.join(
         ne.necompiler.typecode_to_kind[t] for t in types[1:])
     return exception.__class__(newmessage)
@@ -123,10 +123,7 @@ def _get_indexable_cmp(exprnode, indexedcols):
     if cmp_:
         return cmp_
     cmp_ = get_cmp(right, left, turncmp[cmpop])
-    if cmp_:
-        return cmp_
-
-    return not_indexable
+    return cmp_ if cmp_ else not_indexable
 
 
 def _equiv_expr_node(x, y):
@@ -146,10 +143,10 @@ def _equiv_expr_node(x, y):
           or x.astKind != y.astKind
           or len(x.children) != len(y.children)):
         return False
-    for xchild, ychild in zip(x.children, y.children):
-        if not _equiv_expr_node(xchild, ychild):
-            return False
-    return True
+    return all(
+        _equiv_expr_node(xchild, ychild)
+        for xchild, ychild in zip(x.children, y.children)
+    )
 
 
 def _get_idx_expr_recurse(exprnode, indexedcols, idxexprs, strexpr):
@@ -352,11 +349,13 @@ class CompiledCondition:
             # Add this replaced entry to the new exprs2
             var, ops, _ = expr
             exprs2.append((var, ops, tuple(limit_values)))
-        # Create a new container for the converted values
-        newcc = CompiledCondition(
-            self.function, self.parameters, exprs2, self.string_expression,
-            **self.kwargs)
-        return newcc
+        return CompiledCondition(
+            self.function,
+            self.parameters,
+            exprs2,
+            self.string_expression,
+            **self.kwargs
+        )
 
 
 def _get_variable_names(expression):
@@ -392,8 +391,7 @@ def compile_condition(condition, typemap, indexedcols):
     # Get the expression tree and extract index conditions.
     expr = ne.necompiler.stringToExpression(condition, typemap, {})
     if expr.astKind != 'bool':
-        raise TypeError("condition ``%s`` does not have a boolean type"
-                        % condition)
+        raise TypeError(f"condition ``{condition}`` does not have a boolean type")
     idxexprs = _get_idx_expr(expr, indexedcols)
     # Post-process the answer
     if isinstance(idxexprs, list):
@@ -438,10 +436,7 @@ def call_on_recarr(func, params, recarr, param2arg=None, **kwargs):
 
     args = []
     for param in params:
-        if param2arg:
-            arg = param2arg(param)
-        else:
-            arg = param
+        arg = param2arg(param) if param2arg else param
         if hasattr(arg, 'pathname'):  # looks like a column
             arg = get_nested_field(recarr, arg.pathname)
         args.append(arg)

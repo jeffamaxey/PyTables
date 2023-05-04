@@ -100,7 +100,7 @@ def main():
     outqueue = queue.Queue()
 
     # start all threads
-    for i in range(NTHREADS):
+    for _ in range(NTHREADS):
         thread = threading.Thread(target=run,
                                   args=(FILENAME, H5PATH, inqueue, outqueue))
         thread.start()
@@ -114,7 +114,7 @@ def main():
     try:
         mean_ = 0
 
-        for _ in range(len(threads)):
+        for _ in threads:
             out = outqueue.get()
             if isinstance(out, Exception):
                 raise out

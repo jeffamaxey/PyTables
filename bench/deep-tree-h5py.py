@@ -22,7 +22,7 @@ def show_stats(explain, tref):
             vmexe = int(line.split()[1])
         elif line.startswith("VmLib:"):
             vmlib = int(line.split()[1])
-    print("Memory usage: ******* %s *******" % explain)
+    print(f"Memory usage: ******* {explain} *******")
     print(f"VmSize: {vmsize:>7} kB\tVmRSS: {vmrss:>7} kB")
     print(f"VmData: {vmdata:>7} kB\tVmStk: {vmstk:>7} kB")
     print(f"VmExe:  {vmexe:>7} kB\tVmLib: {vmlib:>7} kB")
@@ -34,7 +34,7 @@ def show_stats(explain, tref):
 def populate(f, nlevels):
     g = f
     arr = np.zeros((10,), "f4")
-    for i in range(nlevels):
+    for _ in range(nlevels):
         g["DS1"] = arr
         g["DS2"] = arr
         g.create_group('group2_')
@@ -42,13 +42,10 @@ def populate(f, nlevels):
 
 
 def getnode(f, nlevels, niter, range_):
-    for i in range(niter):
+    for _ in range(niter):
         nlevel = random.randrange(
             (nlevels - range_) / 2, (nlevels + range_) / 2)
-        groupname = ""
-        for i in range(nlevel):
-            groupname += "/group"
-        groupname += "/DS1"
+        groupname = "".join("/group" for _ in range(nlevel)) + "/DS1"
         f[groupname]
 
 

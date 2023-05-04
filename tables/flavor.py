@@ -85,7 +85,7 @@ def check_flavor(flavor):
     """Raise a ``FlavorError`` if the `flavor` is not valid."""
 
     if flavor not in all_flavors:
-        available_flavs = ", ".join(flav for flav in all_flavors)
+        available_flavs = ", ".join(all_flavors)
         raise FlavorError(
             "flavor ``%s`` is unsupported or unavailable; "
             "available flavors in this system are: %s"
@@ -132,8 +132,10 @@ def flavor_to_flavor(array, src_flavor, dst_flavor):
     try:
         return array_of_flavor2(array, src_flavor, dst_flavor)
     except FlavorError as fe:
-        warnings.warn("%s; returning an object of the ``%s`` flavor instead"
-                      % (fe.args[0], src_flavor), FlavorWarning)
+        warnings.warn(
+            f"{fe.args[0]}; returning an object of the ``{src_flavor}`` flavor instead",
+            FlavorWarning,
+        )
         return array
 
 
@@ -223,7 +225,7 @@ def _register_aliases():
     """Register aliases of *available* flavors."""
 
     for flavor in all_flavors:
-        aliases = eval('_%s_aliases' % flavor)
+        aliases = eval(f'_{flavor}_aliases')
         for alias in aliases:
             alias_map[alias] = flavor
 
@@ -231,14 +233,14 @@ def _register_aliases():
 def _register_descriptions():
     """Register descriptions of *available* flavors."""
     for flavor in all_flavors:
-        description_map[flavor] = eval('_%s_desc' % flavor)
+        description_map[flavor] = eval(f'_{flavor}_desc')
 
 
 def _register_identifiers():
     """Register identifier functions of *available* flavors."""
 
     for flavor in all_flavors:
-        identifier_map[flavor] = eval('_is_%s' % flavor)
+        identifier_map[flavor] = eval(f'_is_{flavor}')
 
 
 def _register_converters():
@@ -274,10 +276,11 @@ def _register_all():
 def _deregister_aliases(flavor):
     """Deregister aliases of a given `flavor` (no checks)."""
 
-    rm_aliases = []
-    for (an_alias, a_flavor) in alias_map.items():
-        if a_flavor == flavor:
-            rm_aliases.append(an_alias)
+    rm_aliases = [
+        an_alias
+        for an_alias, a_flavor in alias_map.items()
+        if a_flavor == flavor
+    ]
     for an_alias in rm_aliases:
         del alias_map[an_alias]
 
@@ -297,10 +300,9 @@ def _deregister_identifier(flavor):
 def _deregister_converters(flavor):
     """Deregister converter functions of a given `flavor` (no checks)."""
 
-    rm_flavor_pairs = []
-    for flavor_pair in converter_map:
-        if flavor in flavor_pair:
-            rm_flavor_pairs.append(flavor_pair)
+    rm_flavor_pairs = [
+        flavor_pair for flavor_pair in converter_map if flavor in flavor_pair
+    ]
     for flavor_pair in rm_flavor_pairs:
         del converter_map[flavor_pair]
 
@@ -404,12 +406,7 @@ def _conv_python_to_numpy(array):
 
 
 def _conv_numpy_to_python(array):
-    if array.shape != ():
-        # Lists are the default for returning multidimensional objects
-        array = array.tolist()
-    else:
-        # 0-dim or scalar case
-        array = array.item()
+    array = array.tolist() if array.shape != () else array.item()
     return array
 
 

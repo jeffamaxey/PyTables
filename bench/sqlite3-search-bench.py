@@ -24,8 +24,7 @@ def int_generator(nrows):
     for i in range(nrows):
         if i >= step * j:
             stop = (j + 1) * step
-            if stop > nrows:  # Seems unnecessary
-                stop = nrows
+            stop = min(stop, nrows)
             col_i, col_j = fill_arrays(i, stop)
             j += 1
             k = 0
@@ -83,10 +82,9 @@ def query_db(filename, rng):
     for i in range(ntimes):
         # between clause does not seem to take advantage of indexes
         # cur.execute("select j from ints where j between %s and %s" % \
-        cur.execute("select i from ints where j >= %s and j <= %s" %
-                    # cur.execute("select i from ints where i >= %s and i <=
-                    # %s" %
-                    (rng[0] + i, rng[1] + i))
+        cur.execute(
+            f"select i from ints where j >= {rng[0] + i} and j <= {rng[1] + i}"
+        )
         results = cur.fetchall()
     con.commit()
     qtime = (clock() - t1) / ntimes
@@ -175,7 +173,7 @@ if __name__ == "__main__":
 
     if docreate:
         if verbose:
-            print("writing %s krows" % nrows)
+            print(f"writing {nrows} krows")
         if psyco_imported and usepsyco:
             psyco.bind(create_db)
         nrows *= 1000

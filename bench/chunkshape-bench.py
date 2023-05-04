@@ -20,7 +20,7 @@ print("Chunkshape for original array:", a.chunkshape)
 # Fill the EArray
 t1 = clock()
 zeros = np.zeros((dim1, 1), dtype="float64")
-for i in range(dim2):
+for _ in range(dim2):
     a.append(zeros)
 tcre = clock() - t1
 thcre = dim1 * dim2 * 8 / (tcre * 1024 * 1024)

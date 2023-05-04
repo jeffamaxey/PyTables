@@ -86,7 +86,7 @@ def createFile(filename, totalrows, recsize, verbose):
         isrec = Small()
     # print d
     # Fill the table
-    if recsize == "big" or recsize == "medium":
+    if recsize in ["big", "medium"]:
         d = {"name": " ",
              "float1": 1.0,
              "float2": 2.0,
@@ -107,7 +107,6 @@ def createFile(filename, totalrows, recsize, verbose):
                 d['float1'] = arr
                 arr2[0] = 2.2
                 d['float2'] = arr2
-                pass
             else:
                 d['float1'] = float(i)
                 d['float2'] = float(i)
@@ -116,11 +115,6 @@ def createFile(filename, totalrows, recsize, verbose):
             d['pressure'] = float(i * i)
             d['energy'] = d['pressure']
             dd.append(cPickle.dumps(d))
-#             dd.append(struct.pack(isrec._v_fmt,
-#                                   d['name'], d['float1'], d['float2'],
-#                                   d['ADCcount'],
-#                                   d['grid_i'], d['grid_j'],
-#                                   d['pressure'],  d['energy']))
     else:
         d = {"var1": " ", "var2": 1, "var3": 12.1e10}
         for i in range(totalrows):
@@ -152,11 +146,11 @@ def readFile(filename, recsize, verbose):
     # dd.set_re_pad('-') # sets the pad character...
     # dd.set_re_pad(45)  # ...test both int and char
     dd.open(filename, db.DB_RECNO)
-    if recsize == "big" or recsize == "medium":
+    e = []
+    if recsize in ["big", "medium"]:
         print(isrec._v_fmt)
         c = dd.cursor()
         rec = c.first()
-        e = []
         while rec:
             record = cPickle.loads(rec[1])
             #record = struct.unpack(isrec._v_fmt, rec[1])
@@ -172,7 +166,6 @@ def readFile(filename, recsize, verbose):
         #e = [ t[1] for t in fileh[table] if t[1] < 20 ]
         c = dd.cursor()
         rec = c.first()
-        e = []
         while rec:
             record = cPickle.loads(rec[1])
             #record = struct.unpack(isrec._v_fmt, rec[1])

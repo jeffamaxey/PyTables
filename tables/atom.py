@@ -445,8 +445,7 @@ class Atom(metaclass=MetaAtom):
         # kind (which has a fixed item size).
         if itemsize is None:
             if kind not in deftype_from_kind:
-                raise ValueError("no default item size for kind ``%s``"
-                                 % kind)
+                raise ValueError(f"no default item size for kind ``{kind}``")
             type_ = deftype_from_kind[kind]
             kind, itemsize = split_type(type_)
         kdata = atom_map[kind]
@@ -454,10 +453,10 @@ class Atom(metaclass=MetaAtom):
         if hasattr(kdata, 'kind'):  # atom class: non-fixed item size
             atomclass = kdata
             kwargs['itemsize'] = itemsize
-        else:  # dictionary: fixed item size
-            if itemsize not in kdata:
-                raise _invalid_itemsize_error(kind, itemsize, kdata)
+        elif itemsize in kdata:
             atomclass = kdata[itemsize]
+        else:
+            raise _invalid_itemsize_error(kind, itemsize, kdata)
         # Only set a `dflt` argument if given (`None` may not be understood).
         if dflt is not None:
             kwargs['dflt'] = dflt
@@ -643,13 +642,17 @@ def _create_numeric_class(baseclass, itemsize):
 
     prefix = '%s%d' % (baseclass.prefix(), itemsize * 8)
     type_ = prefix.lower()
-    classdict = {'itemsize': itemsize, 'type': type_,
-                 '__doc__': "Defines an atom of type ``%s``." % type_}
+    classdict = {
+        'itemsize': itemsize,
+        'type': type_,
+        '__doc__': f"Defines an atom of type ``{type_}``.",
+    }
 
     def __init__(self, shape=(), dflt=baseclass._defvalue):
         Atom.__init__(self, self.type, shape, dflt)
+
     classdict['__init__'] = __init__
-    return type('%sAtom' % prefix, (baseclass,), classdict)
+    return type(f'{prefix}Atom', (baseclass,), classdict)
 
 
 Int8Atom = _create_numeric_class(IntAtom, 1)
@@ -1012,7 +1015,7 @@ class PseudoAtom:
     """
 
     def __repr__(self):
-        return '%s()' % self.__class__.__name__
+        return f'{self.__class__.__name__}()'
 
     def toarray(self, object_):
         """Convert an `object_` into an array of base atoms."""
@@ -1032,9 +1035,9 @@ class _BufferedAtom(PseudoAtom):
 
     def toarray(self, object_):
         buffer_ = self._tobuffer(object_)
-        array = np.ndarray(buffer=buffer_, dtype=self.base.dtype,
-                           shape=len(buffer_))
-        return array
+        return np.ndarray(
+            buffer=buffer_, dtype=self.base.dtype, shape=len(buffer_)
+        )
 
     def _tobuffer(self, object_):
         """Convert an `object_` into a buffer."""
@@ -1138,9 +1141,7 @@ class VLUnicodeAtom(_BufferedAtom):
 
     def fromarray(self, array):
         length = len(array)
-        if length == 0:
-            return ''  # ``array.view('U0')`` raises a `TypeError`
-        return array.view('U%d' % length).item()
+        return '' if length == 0 else array.view('U%d' % length).item()
 
 
 class ObjectAtom(_BufferedAtom):
@@ -1170,6 +1171,4 @@ class ObjectAtom(_BufferedAtom):
         # We have to check for an empty array because of a possible
         # bug in HDF5 which makes it claim that a dataset has one
         # record when in fact it is empty.
-        if array.size == 0:
-            return None
-        return pickle.loads(array.tobytes())
+        return None if array.size == 0 else pickle.loads(array.tobytes())

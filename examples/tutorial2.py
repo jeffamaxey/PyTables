@@ -5,11 +5,9 @@ Example to be used in the second tutorial in the User's Guide.
 
 """
 
+
 import tables as tb
 import numpy as np
-
-# Describe a particle record
-
 
 class Particle(tb.IsDescription):
     name = tb.StringCol(itemsize=16)            # 16-character string
@@ -50,8 +48,9 @@ gparticles = root.Particles
 # Create 3 new tables
 for tablename in ("TParticle1", "TParticle2", "TParticle3"):
     # Create a table
-    table = fileh.create_table("/Particles", tablename, Particle,
-                               "Particles: " + tablename)
+    table = fileh.create_table(
+        "/Particles", tablename, Particle, f"Particles: {tablename}"
+    )
     # Get the record object associated with the table:
     particle = table.row
     # Fill the table with 257 particles
@@ -73,8 +72,9 @@ for tablename in ("TParticle1", "TParticle2", "TParticle3"):
 # Now, go for Events:
 for tablename in ("TEvent1", "TEvent2", "TEvent3"):
     # Create a table in Events group
-    table = fileh.create_table(root.Events, tablename, Event,
-                               "Events: " + tablename)
+    table = fileh.create_table(
+        root.Events, tablename, Event, f"Events: {tablename}"
+    )
     # Get the record object associated with the table:
     event = table.row
     # Fill the table with 257 events

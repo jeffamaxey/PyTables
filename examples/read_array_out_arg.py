@@ -16,7 +16,7 @@ def create_file(array_size):
     array = np.ones(array_size, dtype='i8')
     with tb.open_file('test.h5', 'w') as fobj:
         array = fobj.create_array('/', 'test', array)
-        print('file created, size: {} MB'.format(array.size_on_disk / 1e6))
+        print(f'file created, size: {array.size_on_disk / 1000000.0} MB')
 
 
 def standard_read(array_size):
@@ -24,7 +24,7 @@ def standard_read(array_size):
     with tb.open_file('test.h5', 'r') as fobj:
         array = fobj.get_node('/', 'test')
         start = clock()
-        for i in range(N):
+        for _ in range(N):
             output = array.read(0, array_size, 1)
         end = clock()
         assert(np.all(output == 1))
@@ -37,7 +37,7 @@ def pre_allocated_read(array_size):
         array = fobj.get_node('/', 'test')
         start = clock()
         output = np.empty(array_size, 'i8')
-        for i in range(N):
+        for _ in range(N):
             array.read(0, array_size, 1, out=output)
         end = clock()
         assert(np.all(output == 1))

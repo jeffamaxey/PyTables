@@ -28,7 +28,7 @@ class WideTreeTestCase(unittest.TestCase):
         maxchilds = 1000
         if verbose:
             print('\n', '-=' * 30)
-            print("Running %s.test00_wideTree..." % self.__class__.__name__)
+            print(f"Running {self.__class__.__name__}.test00_wideTree...")
             print("Maximum number of childs tested :", maxchilds)
         # Open a new empty HDF5 file
         #file = tempfile.mktemp(".h5")
@@ -41,10 +41,10 @@ class WideTreeTestCase(unittest.TestCase):
             if verbose:
                 print("%3d," % (child), end=' ')
             a = [1, 1]
-            fileh.create_group(fileh.root, 'group' + str(child),
-                               "child: %d" % child)
-            fileh.create_array("/group" + str(child), 'array' + str(child),
-                               a, "child: %d" % child)
+            fileh.create_group(fileh.root, f'group{str(child)}', "child: %d" % child)
+            fileh.create_array(
+                f"/group{str(child)}", f'array{str(child)}', a, "child: %d" % child
+            )
         if verbose:
             print()
         # Close the file
@@ -76,7 +76,7 @@ class WideTreeTestCase(unittest.TestCase):
         maxchilds = 1000
         if verbose:
             print('\n', '-=' * 30)
-            print("Running %s.test00_wideTree..." % self.__class__.__name__)
+            print(f"Running {self.__class__.__name__}.test00_wideTree...")
             print("Maximum number of childs tested :", maxchilds)
         # Open a new empty HDF5 file
         file = tempfile.mktemp(".h5")
@@ -88,8 +88,7 @@ class WideTreeTestCase(unittest.TestCase):
         for child in range(maxchilds):
             if verbose:
                 print("%3d," % (child), end=' ')
-            fileh.create_group(fileh.root, 'group' + str(child),
-                               "child: %d" % child)
+            fileh.create_group(fileh.root, f'group{str(child)}', "child: %d" % child)
         if verbose:
             print()
         # Close the file

@@ -79,12 +79,12 @@ def readFile(filename, atom, niter, verbose):
     fileh = tb.open_file(filename, mode="r")
     table = fileh.root.table
     print("reading", table)
-    if atom == "string":
-        idxcol = table.cols.var1.index
-    elif atom == "bool":
+    if atom == "bool":
         idxcol = table.cols.var4.index
     elif atom == "int":
         idxcol = table.cols.var2.index
+    elif atom == "string":
+        idxcol = table.cols.var1.index
     else:
         idxcol = table.cols.var3.index
     if verbose:
@@ -98,7 +98,7 @@ def readFile(filename, atom, niter, verbose):
 
     rowselected = 0
     if atom == "string":
-        for i in range(niter):
+        for _ in range(niter):
             #results = [table.row["var3"] for i in table.where(2+i<=table.cols.var2 < 10+i)]
             #results = [table.row.nrow() for i in table.where(2<=table.cols.var2 < 10)]
             results = [p["var1"]  # p.nrow()
@@ -106,12 +106,12 @@ def readFile(filename, atom, niter, verbose):
 #                      for p in table.where("1000"<=table.cols.var1<="1010")]
             rowselected += len(results)
     elif atom == "bool":
-        for i in range(niter):
+        for _ in range(niter):
             results = [p["var2"]  # p.nrow()
                        for p in table.where(table.cols.var4 == 0)]
             rowselected += len(results)
     elif atom == "int":
-        for i in range(niter):
+        for _ in range(niter):
             #results = [table.row["var3"] for i in table.where(2+i<=table.cols.var2 < 10+i)]
             #results = [table.row.nrow() for i in table.where(2<=table.cols.var2 < 10)]
             results = [p["var2"]  # p.nrow()
@@ -137,7 +137,7 @@ def readFile(filename, atom, niter, verbose):
             rowselected += len(results)
         else:
             raise ValueError("Unsuported atom value")
-    if verbose and 1:
+    if verbose:
         print("Values that fullfill the conditions:")
         print(results)
 
@@ -305,7 +305,7 @@ if __name__ == "__main__":
         cpu2 = cpuclock()
         tapprows = t2 - t1
         cpuapprows = cpu2 - cpu1
-        print(f"Rows written:", rowsw, " Row size:", rowsz)
+        print("Rows written:", rowsw, " Row size:", rowsz)
         print(
             f"Time writing rows: {tapprows:.3f} s (real) "
             f"{cpuapprows:.3f} s (cpu)  {cpuapprows / tapprows:.0%}")
@@ -321,7 +321,7 @@ if __name__ == "__main__":
         if rng or item:
             (rowsr, uncomprB, niter) = searchFile(file, atom, verbose, item)
         else:
-            for i in range(1):
+            for _ in range(1):
                 (rowsr, rowsel, rowsz) = readFile(file, atom, niter, verbose)
         t2 = clock()
         cpu2 = cpuclock()

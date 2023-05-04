@@ -94,7 +94,7 @@ def copy5(input_path, output_path, complib='zlib', complevel=0):
     chunksize = 10_000
     rowsleft = len(input_table)
     start = 0
-    for chunk in range((len(input_table) / chunksize) + 1):
+    for _ in range((len(input_table) / chunksize) + 1):
         stop = start + min(chunksize, rowsleft)
         data = input_table.read(start, stop)
         output_table.append(data)

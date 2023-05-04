@@ -29,12 +29,11 @@ for k in range(nlevels):
     for j in range(ngroups):
         for i in range(ndatasets):
             # Save the array on the HDF5 file
-            fileh.create_array(group2, 'array' + str(i),
-                               a, "Signed short array")
+            fileh.create_array(group2, f'array{str(i)}', a, "Signed short array")
         # Create a new group
-        group2 = fileh.create_group(group, 'group' + str(j))
+        group2 = fileh.create_group(group, f'group{str(j)}')
     # Create a new group
-    group3 = fileh.create_group(group, 'ngroup' + str(k))
+    group3 = fileh.create_group(group, f'ngroup{str(k)}')
     # Iterate over this new group (group3)
     group = group3
     group2 = group3

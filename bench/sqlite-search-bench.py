@@ -25,6 +25,7 @@ worst = 0
 
 def createNewBenchFile(bfile, verbose):
 
+
     class Create(tb.IsDescription):
         nrows = tb.Int32Col(pos=0)
         irows = tb.Int32Col(pos=1)
@@ -55,7 +56,7 @@ def createNewBenchFile(bfile, verbose):
     bf = tb.open_file(bfile, "w")
     # Create groups
     for recsize in ["sqlite_small"]:
-        group = bf.create_group("/", recsize, recsize + " Group")
+        group = bf.create_group("/", recsize, f"{recsize} Group")
         # Attach the row size of table as attribute
         if recsize == "small":
             group._v_attrs.rowsize = 16
@@ -66,11 +67,11 @@ def createNewBenchFile(bfile, verbose):
         groupS = bf.create_group(group, "search", "Search Group")
         # Create Tables for searching
         for mode in ["indexed", "standard"]:
-            group = bf.create_group(groupS, mode, mode + " Group")
+            group = bf.create_group(groupS, mode, f"{mode} Group")
             # for searching bench
             # for atom in ["string", "int", "float", "bool"]:
             for atom in ["string", "int", "float"]:
-                bf.create_table(group, atom, Search, atom + " bench")
+                bf.create_table(group, atom, Search, f"{atom} bench")
     bf.close()
 
 
@@ -89,7 +90,7 @@ def createFile(filename, nrows, filters, indexmode, heavy, noise, bfile,
 
     if indexmode == "standard":
         print("Creating a new database:", dbfile)
-        instd = os.popen("/usr/local/bin/sqlite " + dbfile, "w")
+        instd = os.popen(f"/usr/local/bin/sqlite {dbfile}", "w")
         CREATESTD = """
 CREATE TABLE small (
 -- Name         Type            -- Example
@@ -122,7 +123,7 @@ CREATE INDEX ivar3 ON small(var3);
     if indexmode == "standard":
         place_holders = ",".join(['%s'] * 3)
         # Insert rows
-        SQL = "insert into small values(NULL, %s)" % place_holders
+        SQL = f"insert into small values(NULL, {place_holders})"
         time1 = clock()
         cpu1 = cpuclock()
         # This way of filling is to copy the PyTables benchmark
@@ -130,10 +131,7 @@ CREATE INDEX ivar3 ON small(var3);
         minimum = 0
         maximum = nrows
         for i in range(0, nrows, nrowsbuf):
-            if i + nrowsbuf > nrows:
-                j = nrows
-            else:
-                j = i + nrowsbuf
+            j = min(i + nrowsbuf, nrows)
             if randomvalues:
                 var3 = np.random.uniform(minimum, maximum, shape=[j - i])
             else:
@@ -181,9 +179,9 @@ CREATE INDEX ivar3 ON small(var3);
     bf = tb.open_file(bfile, "a")
     recsize = "sqlite_small"
     if indexmode == "indexed":
-        table = bf.get_node("/" + recsize + "/create_indexed")
+        table = bf.get_node(f"/{recsize}/create_indexed")
     else:
-        table = bf.get_node("/" + recsize + "/create_standard")
+        table = bf.get_node(f"/{recsize}/create_standard")
     table.row["nrows"] = nrows
     table.row["irows"] = nrows
     table.row["tfill"] = t1

@@ -3,6 +3,7 @@
 """Small example that shows how to work with extendeable arrays of different
 types, strings included."""
 
+
 import numpy as np
 import tables as tb
 
@@ -66,11 +67,11 @@ for x in root.array_b:
 
 print("Testing getitem:")
 for i in range(root.array_b.shape[0]):
-    print("array_b[" + str(i) + "]", "-->", root.array_b[i])
+    print(f"array_b[{str(i)}]", "-->", root.array_b[i])
 # The nrows counts the growing dimension, which is different from the
 # first index
 for i in range(root.array_b.nrows):
-    print("array_b[:," + str(i) + ",:]", "-->", root.array_b[:, i, :])
+    print(f"array_b[:,{str(i)},:]", "-->", root.array_b[:, i, :])
 print("array_c[1:2]", repr(root.array_c[1:2]))
 print("array_c[1:3]", repr(root.array_c[1:3]))
 print("array_b[:]", root.array_b[:])

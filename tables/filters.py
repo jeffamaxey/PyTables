@@ -1,5 +1,6 @@
 """Functionality related with filters in a PyTables file."""
 
+
 import warnings
 import numpy as np
 
@@ -16,7 +17,7 @@ __docformat__ = 'reStructuredText'
 """The format of documentation strings in this module."""
 
 all_complibs = ['zlib', 'lzo', 'bzip2', 'blosc']
-all_complibs += ['blosc:%s' % cname for cname in blosc_compressor_list()]
+all_complibs += [f'blosc:{cname}' for cname in blosc_compressor_list()]
 
 
 """List of all compression libraries."""
@@ -158,12 +159,10 @@ class Filters:
         if (self.shuffle and self.bitshuffle):
             raise ValueError(
                 "Shuffle and BitShuffle cannot be active at the same time")
-        if not (self.shuffle or self.bitshuffle):
+        if self.shuffle or self.bitshuffle:
+            return 1 if self.shuffle else 2
+        else:
             return 0
-        if self.shuffle:
-            return 1
-        if self.bitshuffle:
-            return 2
 
     @classmethod
     def _from_leaf(cls, leaf):
@@ -194,7 +193,7 @@ class Filters:
                     # From Blosc 1.3 on, parameter 6 is used for the compressor
                     if len(values) > 6:
                         cname = blosc_compcode_to_compname(values[6])
-                        kwargs['complib'] = "blosc:%s" % cname
+                        kwargs['complib'] = f"blosc:{cname}"
                 else:
                     kwargs['complevel'] = values[0]
             elif name in foreign_complibs:
@@ -298,16 +297,15 @@ class Filters:
             # These checks are not performed when loading filters from disk.
             if complib not in all_complibs:
                 raise ValueError(
-                    "compression library ``%s`` is not supported; "
-                    "it must be one of: %s"
-                    % (complib, ", ".join(all_complibs)))
+                    f'compression library ``{complib}`` is not supported; it must be one of: {", ".join(all_complibs)}'
+                )
             if utilsextension.which_lib_version(complib) is None:
-                warnings.warn("compression library ``%s`` is not available; "
-                              "using ``%s`` instead"
-                              % (complib, default_complib), FiltersWarning)
+                warnings.warn(
+                    f"compression library ``{complib}`` is not available; using ``{default_complib}`` instead",
+                    FiltersWarning,
+                )
                 complib = default_complib  # always available
 
-        complevel = int(complevel)
         complib = str(complib)
         shuffle = bool(shuffle)
         bitshuffle = bool(bitshuffle)
@@ -315,6 +313,7 @@ class Filters:
         if least_significant_digit is not None:
             least_significant_digit = np.int8(least_significant_digit)
 
+        complevel = int(complevel)
         if complevel == 0:
             # Override some inputs when compression is not enabled.
             complib = None  # make it clear there is no compression
@@ -366,22 +365,28 @@ class Filters:
             args.append(f'complevel={self.complevel}')
         if self.complevel != 0:  # compression enabled (-1 or > 0)
             args.append(f'complib={self.complib!r}')
-        args.append(f'shuffle={self.shuffle}')
-        args.append(f'bitshuffle={self.bitshuffle}')
-        args.append(f'fletcher32={self.fletcher32}')
-        args.append(f'least_significant_digit={self.least_significant_digit}')
+        args.extend(
+            (
+                f'shuffle={self.shuffle}',
+                f'bitshuffle={self.bitshuffle}',
+                f'fletcher32={self.fletcher32}',
+                f'least_significant_digit={self.least_significant_digit}',
+            )
+        )
         return f'{self.__class__.__name__}({", ".join(args)})'
 
     def __str__(self):
         return repr(self)
 
     def __eq__(self, other):
-        if not isinstance(other, self.__class__):
-            return False
-        for attr in self.__dict__:
-            if getattr(self, attr) != getattr(other, attr):
-                return False
-        return True
+        return (
+            all(
+                getattr(self, attr) == getattr(other, attr)
+                for attr in self.__dict__
+            )
+            if isinstance(other, self.__class__)
+            else False
+        )
 
     # XXX: API incompatible change for PyTables 3 line
     # Overriding __eq__ blocks inheritance of __hash__ in 3.x

@@ -7,6 +7,7 @@ to efficiently cope with extremely large amounts of data.
 
 """
 
+
 # Necessary imports to get versions stored on the cython extension
 from .utilsextension import get_hdf5_version as _get_hdf5_version
 
@@ -106,13 +107,13 @@ if 'Float16Atom' in locals():
 from .utilsextension import _broken_hdf5_long_double
 if not _broken_hdf5_long_double():
     if 'Float96Atom' in locals():
-        __all__.extend(('Float96Atom', 'Float96Col'))
-        __all__.extend(('Complex192Atom', 'Complex192Col'))    # XXX check
-
+        __all__.extend(
+            ('Float96Atom', 'Float96Col', 'Complex192Atom', 'Complex192Col')
+        )
     if 'Float128Atom' in locals():
-        __all__.extend(('Float128Atom', 'Float128Col'))
-        __all__.extend(('Complex256Atom', 'Complex256Col'))    # XXX check
-
+        __all__.extend(
+            ('Float128Atom', 'Float128Col', 'Complex256Atom', 'Complex256Col')
+        )
 else:
 
     from . import atom as _atom
